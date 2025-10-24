@@ -9,69 +9,40 @@ def chest_(
     id,
     prize_info={},
     prize=None,
-    occluder_info={},
-    occluder=None,
-    width=DEFAULT_CHEST_WIDTH,
-    top=25,
     position="left",
 ):
-    """
-    Generate HTML for a treasure chest with an optional prize.
-    """
-    # chest_width = width  # vw
-    # chest_top_top = top  # vh
-    # chest_bottom_top = (
-    #     chest_top_top + CHEST_TOP_HEIGHT / CHEST_TOP_WIDTH * chest_width
-    # )
-
-    chest_width = DEFAULT_CHEST_WIDTH  # vw
-    chest_top_top = f"{CHEST_TOP_POSITION_Y}vh"  # vh
-    # chest_bottom_top = (
-    #     f"{chest_top_top}vh + {DEFAULT_CHEST_TOP_HEIGHT}vw * 1vh/1vw"
-    # )
-    chest_bottom_top = (
-        f"calc({CHEST_TOP_POSITION_Y}vh + {DEFAULT_CHEST_TOP_HEIGHT}vw)"
-    )
-    # chest_bottom_top = CHEST_BOTTOM_POSITION_Y  # vw
-
-    # print(
-    #     "vals",
-    #     DEFAULT_CHEST_WIDTH,
-    #     DEFAULT_CHEST_TOP_HEIGHT,
-    #     CHEST_BOTTOM_POSITION_Y,
-    #     CHEST_TOP_POSITION_Y,
-    # )
-
     items = [
         img_(
             id=f"chest_top_image_{id}",
             class_=f"chest_top_image",
             src="images/chest_top.png",
             alt="A treasure chest top",
-            style=f"width: {chest_width}vw; top: {chest_top_top}; left: {LEFT_CHEST_POSITION_X if position == 'left' else RIGHT_CHEST_POSITION_X}vw;",
+            style=f"width: {DEFAULT_CHEST_WIDTH}; top: {CHEST_TOP_POSITION_Y}; left: {LEFT_CHEST_POSITION_X if position == 'left' else RIGHT_CHEST_POSITION_X};",
         ),
         img_(
             id=f"chest_bottom_image_{id}",
             class_=f"chest_bottom_image",
             src="images/chest_bottom.png",
             alt="A treasure chest bottom",
-            style=f"width: {chest_width}vw; top: {chest_bottom_top}; left: {LEFT_CHEST_POSITION_X if position == 'left' else RIGHT_CHEST_POSITION_X}vw;",
+            style=f"width: {DEFAULT_CHEST_WIDTH}; top: {CHEST_BOTTOM_POSITION_Y}; left: {LEFT_CHEST_POSITION_X if position == 'left' else RIGHT_CHEST_POSITION_X};",
         ),
     ]
 
     # Adds a prize if there is a prize for this chest
     if prize_info:
 
-        # prize_width, prize_height = chest_width / 4, chest_width / 4  # vw
         prize_width, prize_height = (
             prize_info["width"],
             prize_info["height"],
         )  # vw
 
         prize_left = (
-            25 - prize_width / 2 if position == "left" else 75 - prize_width / 2
-        )  # vw
-        prize_top = f"calc({chest_bottom_top} - {prize_height/2}vw)"
+            LEFT_COIN_POSITION_X
+            if position == "left"
+            else RIGHT_COIN_POSITION_X
+        )
+
+        prize_top = COIN_POSITION_Y
         items.append(
             prize(
                 id=f"prize_image_{id}",
@@ -106,13 +77,10 @@ def chest_(
     #     )
 
     prize_id = f"prize_image_{id}" if prize_info else ""
-    occluder_id = f"occluder_image_{id}" if occluder_info else ""
     return div_(
         id=f"chest_container_{id}",
         style=f"display: flex; justify-content: flex-start; cursor: pointer; transform-origin: center;",
-        onClick=f"openChest('chest_top_image_{id}', '{prize_id}', '{occluder_id}');",
-        # onClick=f"swipeRight(this);",
-        # onClick=f"select(this);",
+        onClick=f"openChest('chest_top_image_{id}', '{prize_id}');",
     )(*items)
 
 
@@ -125,26 +93,26 @@ def coin_(id, width=1, left=0, top=0):
         class_="prize",
         src="images/coin.png",
         alt="Coin",
-        style=f"width: {width}vw; position: absolute; top: {top}; left: {left}vw;",
+        style=f"width: {width}; position: absolute; top: {top}; left: {left};",
     )
 
 
-def flag_(id, hidden=False, width=1, left=0, top=0):
-    """
-    Generate base HTML for a flag
-    """
-    classes = "occluder"
-    if hidden:
-        classes += " hidden"
-    return img_(
-        id=id,
-        class_=classes,
-        src="images/pirate_flag.png",
-        alt="Flag",
-        width=f"{width}px",
-        style=f"position: absolute; top: {top}px; left: {left}px;",
-        onClick="select(this);",
-    )
+# def flag_(id, hidden=False, width=1, left=0, top=0):
+#     """
+#     Generate base HTML for a flag
+#     """
+#     classes = "occluder"
+#     if hidden:
+#         classes += " hidden"
+#     return img_(
+#         id=id,
+#         class_=classes,
+#         src="images/pirate_flag.png",
+#         alt="Flag",
+#         width=f"{width}px",
+#         style=f"position: absolute; top: {top}px; left: {left}px;",
+#         onClick="select(this);",
+#     )
 
 
 """
@@ -214,6 +182,7 @@ class Trial:
 
         # flag1 = flag_(id="flag1", hidden=False, width=100, left=400, top=200)
 
+        print(items)
         yield div_(style="display: flex;")(*items)
         # return flag1
 
@@ -221,6 +190,76 @@ class Trial:
         #     chest1,
         #     chest2,
         # )
+
+
+class OccludedTrial(Trial):
+    def __init__(self, name=""):
+        super().__init__(name=name)
+
+    def get_html(self):
+        # page 1: show chests: two chests
+        # - open both (empty)
+        # - put coin in one chest
+        # - close both chest
+
+        # page 1
+        items = []
+        items.append(chest_(id="left", position="left"))
+        items.append(chest_(id="right", position="right"))
+
+        final_pos = "left"  # or "right"
+        coin = img_(
+            id="initial_coin_to_either",
+            class_="prize coin_stage_1",
+            src="images/coin.png",
+            alt="Coin",
+            style=f"top: {COIN_POSITION_Y}; left: {LEFT_COIN_POSITION_X};",
+            # style=f"",
+        )
+
+        items.append(coin)
+
+        # add occluder:
+        flag_left = img_(
+            id="initial_occluder",
+            class_="occluder",
+            src="images/pirate_flag.png",
+            alt="Flag",
+            style=f"width: {DEFAULT_FLAG_WIDTH}; height: {DEFAULT_FLAG_HEIGHT}; position: absolute; left: {LEFT_FLAG_POSITION_X}; top: {FLAG_POSITION_Y};",
+        )
+
+        flag_right = img_(
+            id="initial_occluder",
+            class_="occluder",
+            src="images/pirate_flag.png",
+            alt="Flag",
+            style=f"width: {DEFAULT_FLAG_WIDTH}; height: {DEFAULT_FLAG_HEIGHT}; position: absolute; left: {RIGHT_FLAG_POSITION_X}; top: {FLAG_POSITION_Y};",
+        )
+
+        items.extend([flag_left, flag_right])
+        print(items)
+        yield div_(style="display: flex;")(*items)
+
+        # # page 2: ask for choice
+        # items = []
+        # chest1 = chest_(
+        #     id="1",
+        #     prize_info=COIN_INFO,
+        #     prize=coin_,
+        #     position="right",
+        #     occluder_info=FLAG_INFO,
+        #     occluder=flag_,
+        # )
+        # chest2 = chest_(
+        #     id="2",
+        #     position="left",
+        #     occluder_info=FLAG_INFO,
+        #     occluder=flag_,
+        # )
+
+        # items.extend([chest1, chest2])
+
+        # yield div_(style="display: flex;")(*items)
 
 
 @kesar
@@ -232,7 +271,8 @@ def experiment(uid):
 
     for animal in animals:
         print(animal)
-        trial = Trial()
+        trial = OccludedTrial()
+        # trial = Trial()
 
         for page in trial.get_html():  # Inject the coin HTML
             print(page)
