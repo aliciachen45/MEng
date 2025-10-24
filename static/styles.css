@@ -1,4 +1,8 @@
 /* static/styles.css */
+body {
+    background-color: #f7f6ea;
+    /* Replace with your desired color (hex code, color name, RGB, etc.) */
+}
 
 /* 1. Define the animation keyframes */
 @keyframes prize_reveal {
@@ -97,8 +101,19 @@
     /* TODO: CHANGE LATER back to 1*/
 }
 
+
+.coin_stage_1,
+.coin_stage_2 {
+    width: 6vw;
+    position: absolute;
+    opacity: 1;
+    transition: all 1.2s ease-in-out;
+
+}
+
 .occluder {
     z-index: 4;
+    transition: all 1.2s ease-in-out;
 }
 
 .chest_bottom_image {
@@ -136,40 +151,42 @@
 }
 
 .hidden {
-    display: none;
+    visibility: none !important;
 }
 
+
+
+.coin-place-reset {
+    left: 47vw !important;
+    top: -15vh !important;
+    opacity: 1;
+}
 
 /* Coin entrance movements*/
-.coin-place-stage-1 {
+.coin-place-1 {
     /* Center Top (Initial drop) */
+    left: 47vw !important;
     top: 10vh !important;
+    visibility: visible;
+
 }
 
-.coin-place-stage-2 {
+.coin-place-2 {
     /* Center Mid */
-    top: 30vh !important;
-    transform: translateX(-50%);
+    left: 47vw !important;
+    top: 50vh !important;
+    visibility: visible;
+
+    /* transform: translate(-50%); */
 }
 
-.coin-place-stage-3-left {
-    /* Bottom Left Destination */
-    top: 74vh !important;
-    left: 24vw !important;
+
+
+
+.occluder-place-reset {
+    top: -60vh !important;
 }
 
-.coin-place-stage-3-right {
-    /* Bottom Left Destination */
-    top: 74vh !important;
-    left: 74vw !important;
-}
-
-.initial_coin {
-    width: 6vw;
-    position: absolute;
-    top: -15vh;
-    left: 50vw;
-    transform: translateX(-50%) rotateY(0deg);
-    opacity: 1;
-    transition: all 1.2s ease-in-out;
+.occluder-place-1 {
+    top: 10vh !important;
 }

@@ -20,7 +20,7 @@ function startRotation() {
     return
 }
 
-function openChest(chest_id, prizeId, occluderId) {
+function openChest(chest_id, prizeId) {
     const chest_top = document.getElementById(chest_id);
     chest_top.classList.add('open_chest_animation');
 
@@ -41,21 +41,21 @@ function openChest(chest_id, prizeId, occluderId) {
         console.log("No prize for this chest")
     }
 
-    if (occluderId) {
-        const occluder = document.getElementById(occluderId);
-        if (occluder) {
-            console.log("Occluder has been found !")
+    // if (occluderId) {
+    //     const occluder = document.getElementById(occluderId);
+    //     if (occluder) {
+    //         console.log("Occluder has been found !")
 
-            setTimeout(() => {
-                occluder.classList.add('swipe_up_animation');
-            }, 2000);
-        } else {
-            console.log("Server error finding occluder with ID:", occluderId)
-        }
-    }
-    else {
-        console.log("No occluder for this chest")
-    }
+    //         setTimeout(() => {
+    //             occluder.classList.add('swipe_up_animation');
+    //         }, 2000);
+    //     } else {
+    //         console.log("Server error finding occluder with ID:", occluderId)
+    //     }
+    // }
+    // else {
+    //     console.log("No occluder for this chest")
+    // }
 
     var audio = new Audio("../audio/open_chests.mp3");
     console.log("Playing audio");
@@ -115,72 +115,109 @@ function addCoinPlacement(coinObject) {
 }
 
 
-function animateCoin() {
-    const coin_either = document.getElementById('initial_coin_to_either');
-    const coin_left = document.getElementById('initial_coin_to_left');
-    const coin_right = document.getElementById('initial_coin_to_right');
-
-    if (coin_either) {
-        coin = coin_either;
-        console.log("Animating coin to either side");
-    } else if (coin_left) {
-        coin = coin_left;
-        console.log("Animating coin to left side");
-    } else if (coin_right) {
-        coin = coin_right;
-        console.log("Animating coin to right side");
-    } else {
-        console.error("No coin element found for animation");
+function stage_1_animation() {
+    /* Getting coin element */
+    var coin = document.getElementsByClassName('coin_stage_1');
+    console.log("Found coin element:", coin);
+    if (coin.length === 0) {
+        console.error("No coin element found for animation.");
         return;
+    }
+    coin = coin[0];
+
+
+    /* Getting occluder elements */
+
+    occluders = document.getElementsByClassName('occluder');
+    if (occluders.length === 0) {
+        console.error("No occluder elements found.");
+
+    } else {
+        console.log("Found occluders:", occluders);
+    }
+
+
+    /* Resetting elements to correct positions */
+    coin.classList.add('coin-place-reset');
+
+    for (var occluder of occluders) {
+        occluder.classList.add('occluder-place-reset');
     }
 
 
     // Stage 0: Initial Delay (The 'oncreation' equivalent)
+
     const initialDelay = 500; // Wait 0.5 seconds before starting
 
+    // Introduce coin in center top
     setTimeout(() => {
-        // Stage 1: Move from out of sight to center top
-        coin.classList.add('coin-place-stage-1');
+        coin.classList.remove('coin-place-reset');
+        coin.classList.add('coin-place-1');
 
-        // Stage 2: Move from center top to center mid
+        // TODO: Move chest tops up as well
+
+        // Introduce occluders, doesn't cover the chest yet
         setTimeout(() => {
-            coin.classList.remove('coin-place-stage-1');
-            coin.classList.add('coin-place-stage-2');
+            for (var occluder of occluders) {
+                occluder.classList.remove('occluder-place-reset');
+                occluder.classList.add('occluder-place-1');
+            }
 
-            // Stage 3: Move from center mid to left or right
+            // Pull occluders down in front of chest. Removing occluder-place-1 will return occluders to their original position
             setTimeout(() => {
-                coin.classList.remove('coin-place-stage-2');
+                for (var occluder of occluders) {
+                    occluder.classList.remove('occluder-place-1');
+                }
 
-                choices = ['left', 'right'];
-                coin_side = choices[Math.floor(Math.random() * choices.length)];
-                console.log(coin_side);
-                coin.classList.add(`coin-place-stage-3-${coin_side}`);
-
-                const audio = new Audio("../audio/open_chest.mp3");
-                const currentDir = __dirname;
-                console.log(currentDir);
-                console.log(audio);
-                audio.play();
-
-
-                // And hide the coin after reaching final position
+                // Move the coin from center top to center mid
                 setTimeout(() => {
-                    coin.classList.add('hidden');
-                }, 2000);
+                    coin.classList.remove('coin-place-1');
+                    coin.classList.add('coin-place-2');
 
-            }, 1200); // Wait 1.2s for Stage 2 (Center Mid) movement
+                    // Move from center mid to left or right
+                    setTimeout(() => {
+                        /* Removing coin-place-2 will return coin to its original (aka final) position */
 
-        }, 1200); // Wait 1.2s for Stage 1 (Center Top) movement
+                        coin.classList.remove('coin-place-2');
 
+
+                        // /* PPlay the relevant audio */
+                        // const audio = new Audio("../audio/open_chest.mp3");
+                        // const currentDir = __dirname;
+                        // console.log(currentDir);
+                        // console.log(audio);
+                        // audio.play();
+
+
+                        // And hide the coin after reaching final position
+                        setTimeout(() => {
+                            coin.classList.add('hidden');
+                        }, 1200);
+
+
+                        // Pull occluders up out of screen
+                        setTimeout(() => {
+                            for (var occluder of occluders) {
+                                occluder.classList.add('occluder-place-reset');
+                                occluder.style.transition = "all 2s ease-in-out";
+                            }
+                        }, 2000);
+
+
+                    }, 1200);
+
+                }, 1200);
+            }, 1200);
+        }, 1200);
     }, initialDelay);
 
-    window.setTimeout(function () {
-        SUBMITTING = true; // Kesar global variable
-        document.querySelector('form').submit();
-    }, 5000); // Wait slightly longer than the 2.5s animation duration
+    // window.setTimeout(function () {
+    //     SUBMITTING = true; // Kesar global variable
+    //     document.querySelector('form').submit();
+    // }, 5000); // Wait slightly longer than the 2.5s animation duration
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     // Run the animation once the DOM structure is ready
-    animateCoin();
+    stage_1_animation();
 });
