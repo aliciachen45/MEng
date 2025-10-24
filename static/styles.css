@@ -1,0 +1,175 @@
+/* static/styles.css */
+
+/* 1. Define the animation keyframes */
+@keyframes prize_reveal {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    20% {
+        transform: translateY(-100px);
+    }
+
+    60% {
+        transform: translateY(-100px) rotateY(360deg);
+    }
+
+    100% {
+        transform: translateY(-100px) rotateY(720deg);
+    }
+}
+
+@keyframes open_chest {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    3% {
+        transform: rotateZ(-3deg);
+    }
+
+    6% {
+        transform: rotateZ(3deg);
+    }
+
+    9% {
+        transform: rotateZ(-3deg);
+    }
+
+    12% {
+        transform: rotateZ(3deg);
+    }
+
+    15% {
+        transform: rotateZ(-3deg);
+    }
+
+    18% {
+        transform: rotateZ(3deg);
+    }
+
+    21% {
+        transform: rotateY(0deg);
+    }
+
+    28% {
+        transform: rotateY(0deg);
+
+    }
+
+    100% {
+        transform: translateY(-50px);
+        z-index: -1;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+}
+
+@keyframes swipe_up {
+    0% {
+        transform: translateY(0px);
+    }
+
+    100% {
+        transform: translateY(-100px);
+    }
+}
+
+@keyframes place_coin {}
+
+
+.prize {
+    position: absolute;
+    z-index: 5;
+    /* TODO: CHANGE LATER back to 1*/
+}
+
+.occluder {
+    z-index: 4;
+}
+
+.chest_bottom_image {
+    position: absolute;
+    z-index: 2;
+}
+
+.chest_top_image {
+    position: absolute;
+    z-index: 3;
+}
+
+
+
+:root {
+    --animation-speed: 2s;
+}
+
+/* 3. The class that *starts* the animation (added by JavaScript) */
+.prize_reveal_animation {
+    animation: prize_reveal 2.5s ease-in-out forwards;
+    /* z-index: 4; */
+}
+
+.open_chest_animation {
+    animation: open_chest 3s ease-in-out forwards;
+}
+
+.swipe_up_animation {
+    animation: swipe_up 2s ease-in-out forwards;
+}
+
+.pulse_animation {
+    animation: pulse var(--animation-speed) ease-in-out forwards;
+}
+
+.hidden {
+    display: none;
+}
+
+
+/* Coin entrance movements*/
+.coin-place-stage-1 {
+    /* Center Top (Initial drop) */
+    top: 10vh !important;
+}
+
+.coin-place-stage-2 {
+    /* Center Mid */
+    top: 30vh !important;
+    transform: translateX(-50%);
+}
+
+.coin-place-stage-3-left {
+    /* Bottom Left Destination */
+    top: 74vh !important;
+    left: 24vw !important;
+}
+
+.coin-place-stage-3-right {
+    /* Bottom Left Destination */
+    top: 74vh !important;
+    left: 74vw !important;
+}
+
+.initial_coin {
+    width: 6vw;
+    position: absolute;
+    top: -15vh;
+    left: 50vw;
+    transform: translateX(-50%) rotateY(0deg);
+    opacity: 1;
+    transition: all 1.2s ease-in-out;
+}
