@@ -22,11 +22,28 @@ function startRotation() {
 
 function openChest(chest_id, prizeId) {
     const chest_top = document.getElementById(chest_id);
+    const hiddenInput = document.getElementById('choice_input');
+
+    // Record which chest was clicked
+    let choice = 'unknown';
+    if (chest_id.includes('left')) {
+        choice = 'left';
+    } else if (chest_id.includes('right')) {
+        choice = 'right';
+    }
+
+    if (hiddenInput) {
+        hiddenInput.value = choice;
+        console.log("Recording choice:", choice);
+    } else {
+        console.error("Fatal: Could not find hidden input #choice_input");
+    }
+
     chest_top.classList.add('open_chest_animation');
 
+    // Reveal Prize if there is one
     if (prizeId) {
         const prize = document.getElementById(prizeId);
-        // print(prize)
         if (prize) {
             console.log("Prize has been found !")
 
@@ -41,49 +58,22 @@ function openChest(chest_id, prizeId) {
         console.log("No prize for this chest")
     }
 
-    // if (occluderId) {
-    //     const occluder = document.getElementById(occluderId);
-    //     if (occluder) {
-    //         console.log("Occluder has been found !")
-
-    //         setTimeout(() => {
-    //             occluder.classList.add('swipe_up_animation');
-    //         }, 2000);
-    //     } else {
-    //         console.log("Server error finding occluder with ID:", occluderId)
-    //     }
-    // }
-    // else {
-    //     console.log("No occluder for this chest")
-    // }
-
-    var audio = new Audio("../audio/open_chests.mp3");
+    var audio = new Audio("../audio/open_chest_rumble.mp3");
     console.log("Playing audio");
     audio.play();
+
     window.setTimeout(function () {
-        SUBMITTING = true; // Kesar global variable
-        document.querySelector('form').submit();
-    }, 5000); // Wait slightly longer than the 2.5s animation duration
+        SUBMITTING = true;
+        document.querySelector('form').submit("hi");
+    }, 5000);
 
 
 
-    // window.setTimeout(function () {
-    //     SUBMITTING = true; // Kesar global variable
-    //     document.querySelector('form').submit();
-    // }, 5000); // Wait slightly longer than the 2.5s animation duration
-    // Example: Make the prize spin after the chest lid moves
-    // You would typically apply an animation class here
-    //     setTimeout(() => {
-    //         prize.classList.add('prize_reveal_animation');
-    //     }, 500); // Wait 500ms after opening the chest
-    // } else {
-    //     console.error(`Prize element with ID '${prizeId}' not found.`);
 }
 
 function swipeRight(object) {
     // console.log("Swiping right for object:", object_id);
     // const object = document.getElementById(object_id);
-    // e.preventDefault(); // Prevent default touch behavior
     children = object.children;
 
     for (let i = 0; i < children.length; i++) {
@@ -101,7 +91,6 @@ function swipeRight(object) {
 
 function select(object) {
     console.log("Selecting object:", object);
-    // document.documentElement.style.setProperty('--animation-speed', '5s');
     root = document.documentElement;
     root.style.setProperty('--animation-speed', '1s');
     object.classList.add('pulse_animation');
@@ -110,17 +99,12 @@ function select(object) {
 
 }
 
-function addCoinPlacement(coinObject) {
-    coinObject.classList.add('coin_placement_animation');
-}
-
-
 function stage_1_animation() {
     /* Getting coin element */
     var coin = document.getElementsByClassName('coin_stage_1');
     console.log("Found coin element:", coin);
     if (coin.length === 0) {
-        console.error("No coin element found for animation.");
+        console.log("No coin element found for animation.");
         return;
     }
     coin = coin[0];
@@ -138,7 +122,7 @@ function stage_1_animation() {
 
 
     /* Resetting elements to correct positions */
-    coin.classList.add('coin-place-reset');
+    coin.classList.add('prize-place-reset');
 
     for (var occluder of occluders) {
         occluder.classList.add('occluder-place-reset');
@@ -151,8 +135,8 @@ function stage_1_animation() {
 
     // Introduce coin in center top
     setTimeout(() => {
-        coin.classList.remove('coin-place-reset');
-        coin.classList.add('coin-place-1');
+        coin.classList.remove('prize-place-reset');
+        coin.classList.add('prize-place-1');
 
         // TODO: Move chest tops up as well
 
@@ -171,18 +155,19 @@ function stage_1_animation() {
 
                 // Move the coin from center top to center mid
                 setTimeout(() => {
-                    coin.classList.remove('coin-place-1');
-                    coin.classList.add('coin-place-2');
+                    coin.classList.remove('prize-place-1');
+                    coin.classList.add('prize-place-2');
 
                     // Move from center mid to left or right
                     setTimeout(() => {
                         /* Removing coin-place-2 will return coin to its original (aka final) position */
 
-                        coin.classList.remove('coin-place-2');
+                        coin.classList.remove('prize-place-2');
+                        // new Audio("../audio/coin_placement.wav").play();
 
 
-                        // /* PPlay the relevant audio */
-                        // const audio = new Audio("../audio/open_chest.mp3");
+                        // // /* PPlay the relevant audio */
+                        // var audio = new Audio("../audio/open_chest.mp3");
                         // const currentDir = __dirname;
                         // console.log(currentDir);
                         // console.log(audio);
@@ -201,6 +186,13 @@ function stage_1_animation() {
                                 occluder.classList.add('occluder-place-reset');
                                 occluder.style.transition = "all 2s ease-in-out";
                             }
+
+
+                            // Submit to kesar
+                            window.setTimeout(function () {
+                                SUBMITTING = true; // Kesar global variable
+                                document.querySelector('form').submit();
+                            }, 1800);
                         }, 2000);
 
 
@@ -211,13 +203,130 @@ function stage_1_animation() {
         }, 1200);
     }, initialDelay);
 
-    // window.setTimeout(function () {
-    //     SUBMITTING = true; // Kesar global variable
-    //     document.querySelector('form').submit();
-    // }, 5000); // Wait slightly longer than the 2.5s animation duration
+
 }
 
+function stage_2_animation() {
+    /* Getting coin element */
+
+    const elements = document.getElementById('prize_with_hook_container').children;
+
+    for (var object of elements) {
+        if (object.id == "hooked_prize") {
+            prize_position_x = object.style.left;
+            prize_position_y = object.style.top;
+            var prize = object
+        }
+    }
+
+
+    const hooks = document.getElementsByClassName('hook');
+    for (var object of hooks) {
+        console.log(object.id)
+        if (object.id.includes('prize')) {
+            hook_pos1_x = object.style.left;
+            hook_pos1_y = object.style.top;
+            var position = object.id.split('_')[2];
+            var hook = object
+        } else if (object.id.includes('chest')) {
+            hook_pos2_x = object.style.left;
+            hook_pos2_y = object.style.top;
+        }
+    }
+
+    var chest = document.getElementById(`chest_container_${position}`);
+
+
+    let reset_deltax = "";
+    let reset_deltay = "";
+    if (position == "right") {
+        reset_deltax = "40vw";
+        reset_deltay = "-20vh";
+    } else if (position == "left") {
+        reset_deltax = "-40vw";
+        reset_deltay = "-20vh";
+    }
+
+
+
+    hook_posreset_x = `calc(${hook_pos1_x} + ${reset_deltax})`;
+    hook_posreset_y = `calc(${hook_pos1_y} + ${reset_deltay})`;
+
+    // Resetting positions
+    prize.style.left = `calc(${prize_position_x} + ${reset_deltax})`;
+    prize.style.top = `calc(${prize_position_y} + ${reset_deltay})`;
+
+    hook.style.left = hook_posreset_x;
+    hook.style.top = hook_posreset_y;
+
+    hook.classList.remove('hidden');
+    prize.classList.remove('hidden');
+
+    setTimeout(() => {
+        prize.style.left = prize_position_x;
+        prize.style.top = prize_position_y;
+
+        hook.style.left = hook_pos1_x;
+        hook.style.top = hook_pos1_y;
+
+        setTimeout(() => {
+            hook.style.left = hook_pos2_x;
+            hook.style.top = hook_pos2_y;
+
+            setTimeout(() => {
+                hook.style.left = hook_posreset_x;
+                hook.style.top = hook_posreset_y;
+
+
+                for (var child of chest.children) {
+
+
+                    console.log("Child found:", child);
+                    child.style.left = `calc(${hook_posreset_x} - ${hook_pos2_x} + ${child.style.left})`;
+                    child.style.top = `calc(${hook_posreset_y} - ${hook_pos2_y} + ${child.style.top})`;
+                }
+            }, 1200);
+        }, 1200);
+
+    }, 1200);
+}
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Run the animation once the DOM structure is ready
-    stage_1_animation();
+    // stage_1_animation();
+    stage = document.getElementById('stage_indicator').innerText;
+    console.log("Current stage:", stage);
+
+    if (stage == '1') {
+        stage_1_animation();
+    } else if (stage == '2') {
+        stage_2_animation();
+    }
+
+    // have a tag for each of the stages
+    // console.log("Document loaded, starting spiral animation");
+    // startSpiralAnimation();
 });
+
+
+// function startSpiralAnimation() {
+//     // console.log("Initializing GSAP spiral animation");
+//     gsap.registerPlugin(MotionPathPlugin);
+//     console.log("Starting spiral animation");
+
+//     gsap.to("#dot", {
+//         // Standard tween properties
+//         duration: 15,          // The time it takes to complete one loop
+//         repeat: -1,            // Loop infinitely
+//         ease: "none",          // Linear speed for a smooth spiral motion
+
+//         // MotionPathPlugin Configuration
+//         motionPath: {
+//             path: "#spiralPath", // Reference the ID of the SVG path
+//             align: "#spiralPath",// Align the object's center to the path 
+//             alignOrigin: [0.5, 0.5], // Center the object precisely on the path
+//             autoRotate: true     // Automatically rotate the dot to face the direction of the path
+//         }
+//     });
+// }

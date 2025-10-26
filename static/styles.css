@@ -4,6 +4,10 @@ body {
     /* Replace with your desired color (hex code, color name, RGB, etc.) */
 }
 
+* {
+    transition: all 1.2s ease-in-out;
+}
+
 /* 1. Define the animation keyframes */
 @keyframes prize_reveal {
     0% {
@@ -95,12 +99,41 @@ body {
 @keyframes place_coin {}
 
 
-.prize {
-    position: absolute;
-    z-index: 5;
-    /* TODO: CHANGE LATER back to 1*/
+
+
+
+/* Generic */
+
+:root {
+    --animation-speed: 2s;
 }
 
+.hidden {
+    display: none !important;
+}
+
+/* Static style */
+
+.prize {
+    position: absolute;
+    /* z-index: 5; */
+    z-index: 1;
+    transition: all 1.2s ease-in-out;
+
+    /* TODO: CHANGE LATER back to 1 */
+}
+
+.hook {
+    position: absolute;
+    z-index: 5;
+    transition: all 1.2s ease-in-out;
+}
+
+.hook_left {
+    transform: scaleX(-1);
+}
+
+#hook_right {}
 
 .coin_stage_1,
 .coin_stage_2 {
@@ -108,7 +141,6 @@ body {
     position: absolute;
     opacity: 1;
     transition: all 1.2s ease-in-out;
-
 }
 
 .occluder {
@@ -128,11 +160,59 @@ body {
 
 
 
-:root {
-    --animation-speed: 2s;
+/*
+Stage 1 animation positions
+*/
+
+.prize-place-reset {
+    left: 47vw !important;
+    top: -15vh !important;
+    opacity: 1;
 }
 
-/* 3. The class that *starts* the animation (added by JavaScript) */
+/* Top mid*/
+.prize-place-1 {
+    left: 47vw !important;
+    top: 10vh !important;
+    visibility: visible;
+
+}
+
+/* Center mid*/
+.prize-place-2 {
+    left: 47vw !important;
+    top: 50vh !important;
+    visibility: visible;
+
+}
+
+/* Occluder animations */
+.occluder-place-reset {
+    top: -60vh !important;
+}
+
+.occluder-place-1 {
+    top: 10vh !important;
+}
+
+/* Stage 2 hook animation */
+.hook-position-reset {
+    top: 10vh !important;
+    left: 120vw !important;
+
+}
+
+.prize-position-reset {
+    top: 10vh !important;
+    left: 120vw !important;
+}
+
+
+
+
+/* 
+Choice task animations
+*/
 .prize_reveal_animation {
     animation: prize_reveal 2.5s ease-in-out forwards;
     /* z-index: 4; */
@@ -150,43 +230,18 @@ body {
     animation: pulse var(--animation-speed) ease-in-out forwards;
 }
 
-.hidden {
-    visibility: none !important;
-}
-
-
-
-.coin-place-reset {
-    left: 47vw !important;
-    top: -15vh !important;
-    opacity: 1;
-}
-
-/* Coin entrance movements*/
-.coin-place-1 {
-    /* Center Top (Initial drop) */
-    left: 47vw !important;
-    top: 10vh !important;
-    visibility: visible;
-
-}
-
-.coin-place-2 {
-    /* Center Mid */
-    left: 47vw !important;
-    top: 50vh !important;
-    visibility: visible;
-
-    /* transform: translate(-50%); */
-}
 
 
 
 
-.occluder-place-reset {
-    top: -60vh !important;
-}
 
-.occluder-place-1 {
-    top: 10vh !important;
+#dot {
+    width: 20px;
+    height: 20px;
+    background-color: #4CAF50;
+    /* Green */
+    border-radius: 50%;
+    position: absolute;
+    /* Crucial for GSAP to control positioning */
+    z-index: 10;
 }

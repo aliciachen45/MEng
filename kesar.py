@@ -136,6 +136,7 @@ elements = [
     "<output>",
     "<p>",
     "<param>",
+    "<path>",
     "<picture>",
     "<plaintext>",
     "<pre>",
@@ -162,6 +163,7 @@ elements = [
     "<sub>",
     "<summary>",
     "<sup>",
+    "<svg>",
     "<table>",
     "<tbody>",
     "<td>",
@@ -230,6 +232,12 @@ def page(uid, *contents, **kwargs):
             });
         """
         ),
+        # script_(
+        #     src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
+        # )(),
+        # script_(
+        #     src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/MotionPathPlugin.min.js"
+        # )(),
         script_()(static_("static/script.js")),
     )
 
