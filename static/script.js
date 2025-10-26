@@ -20,17 +20,32 @@ function startRotation() {
     return
 }
 
-function openChest(chest_id, prizeId) {
-    const chest_top = document.getElementById(chest_id);
-    const hiddenInput = document.getElementById('choice_input');
+function openChest(object) {
+    const children = object.children;
 
-    // Record which chest was clicked
-    let choice = 'unknown';
-    if (chest_id.includes('left')) {
+    let choice = "unknown";
+    let prize = null;
+    let chest_top = null;
+
+    for (var child of children) {
+        console.log("Child found:", child);
+        if (child.id.includes('chest_top_image')) {
+            chest_top = child;
+        } else if (child.id.includes('prize_')) {
+            prize = child
+        }
+    }
+
+    // Find choice based on which chest was clicked
+
+    if (object.id.includes('left')) {
         choice = 'left';
-    } else if (chest_id.includes('right')) {
+    } else if (object.id.includes('right')) {
         choice = 'right';
     }
+
+    // Record choice
+    const hiddenInput = document.getElementById('choice_input');
 
     if (hiddenInput) {
         hiddenInput.value = choice;
@@ -42,19 +57,12 @@ function openChest(chest_id, prizeId) {
     chest_top.classList.add('open_chest_animation');
 
     // Reveal Prize if there is one
-    if (prizeId) {
-        const prize = document.getElementById(prizeId);
-        if (prize) {
-            console.log("Prize has been found !")
-
-            setTimeout(() => {
-                prize.classList.add('prize_reveal_animation');
-            }, 2000); // reveal prize after chest opens
-        } else {
-            console.log("Server error finding prize with ID:", prizeId)
-        }
-    }
-    else {
+    if (prize) {
+        console.log("Prize has been found !")
+        setTimeout(() => {
+            prize.classList.add('prize_reveal_animation');
+        }, 2000); // reveal prize after chest opens
+    } else {
         console.log("No prize for this chest")
     }
 
@@ -66,8 +74,6 @@ function openChest(chest_id, prizeId) {
         SUBMITTING = true;
         document.querySelector('form').submit("hi");
     }, 5000);
-
-
 
 }
 
@@ -89,14 +95,46 @@ function swipeRight(object) {
 
 
 
-function select(object) {
+function selectChest(object) {
     console.log("Selecting object:", object);
-    root = document.documentElement;
-    root.style.setProperty('--animation-speed', '1s');
-    object.classList.add('pulse_animation');
+    // root = document.documentElement;
+    // root.style.setProperty('--animation-speed', '1s');
+    // object.classList.add('pulse_animation');
     var audio = new Audio("../audio/pop.mp3");
     audio.play();
 
+    children = object.children;
+
+    for (var child of children) {
+        console.log("Child found:", child);
+        if (child.id.includes('chest')) {
+            chest_top = child;
+            chest_top.classList.add('pulse_animation');
+        }
+    }
+
+    // Find choice based on which chest was clicked
+
+    if (object.id.includes('left')) {
+        choice = 'left';
+    } else if (object.id.includes('right')) {
+        choice = 'right';
+    }
+
+    // Record choice
+    const hiddenInput = document.getElementById('choice_input');
+
+    if (hiddenInput) {
+        hiddenInput.value = choice;
+        console.log("Recording choice:", choice);
+    } else {
+        console.error("Fatal: Could not find hidden input #choice_input");
+    }
+
+    window.setTimeout(function () {
+        SUBMITTING = true;
+        document.querySelector('form').submit();
+    }, 2000);
 }
 
 function stage_1_animation() {
@@ -132,6 +170,10 @@ function stage_1_animation() {
     // Stage 0: Initial Delay (The 'oncreation' equivalent)
 
     const initialDelay = 500; // Wait 0.5 seconds before starting
+    for (var occluder of occluders) {
+        occluder.classList.remove('hidden');
+    }
+    coin.classList.remove('hidden');
 
     // Introduce coin in center top
     setTimeout(() => {
@@ -192,7 +234,7 @@ function stage_1_animation() {
                             window.setTimeout(function () {
                                 SUBMITTING = true; // Kesar global variable
                                 document.querySelector('form').submit();
-                            }, 1800);
+                            }, 2000);
                         }, 2000);
 
 

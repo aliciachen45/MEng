@@ -76,6 +76,7 @@ body {
         transform: scale(1);
     }
 
+
     50% {
         transform: scale(1.05);
     }
@@ -95,8 +96,6 @@ body {
         transform: translateY(-100px);
     }
 }
-
-@keyframes place_coin {}
 
 
 
@@ -151,11 +150,13 @@ body {
 .chest_bottom_image {
     position: absolute;
     z-index: 2;
+    transform-origin: top;
 }
 
 .chest_top_image {
     position: absolute;
     z-index: 3;
+    transform-origin: bottom;
 }
 
 
@@ -188,7 +189,7 @@ Stage 1 animation positions
 
 /* Occluder animations */
 .occluder-place-reset {
-    top: -60vh !important;
+    top: -70vh !important;
 }
 
 .occluder-place-1 {
@@ -227,7 +228,7 @@ Choice task animations
 }
 
 .pulse_animation {
-    animation: pulse var(--animation-speed) ease-in-out forwards;
+    animation: pulse 1s ease-in-out forwards;
 }
 
 
