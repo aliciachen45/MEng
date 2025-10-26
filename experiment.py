@@ -7,52 +7,15 @@ import random
 
 
 def chest_(
-    prize_info={},
     prize=None,
-    position="left",
+    side="left",
     onclick_fn="selectChest",
 ):
-    # Get the chest object
-    items = [
-        img_(
-            id=f"chest_top_image_{position}",
-            class_=f"chest_top_image",
-            src="images/chest_top.png",
-            alt="A treasure chest top",
-            style=f"width: {DEFAULT_CHEST_WIDTH}; top: {CHEST_TOP_POSITION_Y}; left: {LEFT_CHEST_POSITION_X if position == 'left' else RIGHT_CHEST_POSITION_X};",
-        ),
-        img_(
-            id=f"chest_bottom_image_{position}",
-            class_=f"chest_bottom_image",
-            src="images/chest_bottom.png",
-            alt="A treasure chest bottom",
-            style=f"width: {DEFAULT_CHEST_WIDTH}; top: {CHEST_BOTTOM_POSITION_Y}; left: {LEFT_CHEST_POSITION_X if position == 'left' else RIGHT_CHEST_POSITION_X};",
-        ),
-    ]
+    items = Chest(name="chest", side=side).get_html()
 
-    # Adds a prize if there is a prize for this chest
-    if prize_info:
-
-        prize_width, prize_height = (
-            prize_info["width"],
-            prize_info["height"],
-        )
-
-        prize_left = (
-            prize_info["left_x"]
-            if position == "left"
-            else prize_info["right_x"]
-        )
-
-        prize_top = prize_info["y"]
-        items.append(
-            prize(
-                id=f"prize_image_{position}",
-                width=prize_width,
-                left=prize_left,
-                top=prize_top,
-            )
-        )
+    if prize:
+        prize_object = prize(name=f"prize_image_{side}", side=side)
+        items.extend(prize_object.get_html())
 
         # add the sound effect
     else:
@@ -60,102 +23,185 @@ def chest_(
         # add the sound effect
 
     return div_(
-        id=f"chest_container_{position}",
+        id=f"chest_container_{side}",
         style=f"display: flex; justify-content: flex-start; cursor: pointer;",
         onClick=f"{onclick_fn}(this);",
-        # onClick=f"openChest('chest_top_image_{position}', '{prize_id}');",
     )(*items)
 
 
-def coin_(id, width=1, left=0, top=0, additional_style="", additional_class=""):
+def coin_(id, additional_style="", additional_class=""):
     """
     Generate base HTML for a coin
     """
-    return img_(
-        id=id,
-        class_=f"prize {additional_class}",
-        src="images/coin.png",
-        alt="Coin",
-        style=f"width: {width}; top: {top}; left: {left}; {additional_style}",
-    )
+
+    return Coin(name=id).get_html(
+        additional_style=additional_style, additional_class=additional_class
+    )[0]
 
 
-def chest_with_hook_(position="left"):
+def chest_with_hook_(side="left"):
     """
     Generate base HTML for a chest with hook
     """
     # Get chest object
-    chest = chest_(position=position)
+    print("Generating chest with hook for side:", side)
+    chest = chest_(side=side)
 
     # Get hook object
-    hook = img_(
-        id=f"hook_chest_{position}",
-        class_=f"hook hidden",
-        src="images/hook.png",
-        alt="Chest Hook",
-        style=f"width: {DEFAULT_HOOK_WIDTH}; height: {DEFAULT_HOOK_HEIGHT}; top: {CHEST_HOOK_POSITION_Y}; left: {LEFT_HOOK_POSITION_X if position == 'left' else RIGHT_HOOK_POSITION_X};",
-    )
+    hook_x = LEFT_HOOK_POSITION_X if side == "left" else RIGHT_HOOK_POSITION_X
+    hook = Hook(
+        name=f"hook_chest_{side}",
+        side=side,
+        left=hook_x,
+        top=CHEST_HOOK_POSITION_Y,
+    ).get_html(additional_class="hidden")[0]
 
-    return div_(id=f"chest_with_hook_container_{position}")(chest, hook)
+    return div_(id=f"chest_with_hook_container_{side}")(chest, hook)
 
 
-def prize_with_hook_(prize_info, prize, position="left"):
+def prize_with_hook_(prize, side="left"):
     """
     Generate base HTML for a coin with hook
     """
     # Get prize object
-    prize_left = (
-        prize_info["left_x"] if position == "left" else prize_info["right_x"]
-    )
 
-    prize_top = prize_info["y"]
-    coin = prize(
-        id=f"hooked_prize",
-        width=prize_info["width"],
-        left=prize_left,
-        top=prize_top,
-        additional_style="z-index: 4;",
-        additional_class="hidden",
+    prize_object = prize(name="hooked_prize", side=side)
+    prize_html = prize_object.get_html(
+        additional_style="z-index: 4;", additional_class="hidden"
+    )[0]
+
+    prize_top = prize_object.info["y"]
+    prize_left = (
+        prize_object.info["left_x"]
+        if side == "left"
+        else prize_object.info["right_x"]
     )
 
     # Calculate hook positions based on prize position and dimensions
     hook_y = f"calc({prize_top} - {DEFAULT_HOOK_HEIGHT} + 2vh)"
 
-    if position == "left":
-        hook_x = (
-            f"calc({prize_left} + {prize_info['width']} - {DEFAULT_HOOK_WIDTH})"
-        )
+    if side == "left":
+        hook_x = f"calc({prize_left} + {prize_object.info['width']} - {DEFAULT_HOOK_WIDTH})"
     else:
         hook_x = prize_left
 
     # Get hook object
-    hook = img_(
-        id=f"hook_prize_{position}",
-        class_=f"hook hook_{position} hidden",
-        src="images/hook.png",
-        alt="Chest Hook",
-        style=f"width: {DEFAULT_HOOK_WIDTH}; height: {DEFAULT_HOOK_HEIGHT}; top: {hook_y}; left: {hook_x};",
-    )
+    hook = Hook(
+        name=f"hook_prize_{side}",
+        side=side,
+        left=hook_x,
+        top=hook_y,
+    ).get_html(additional_class="hidden")[0]
 
-    return div_(id=f"prize_with_hook_container")(coin, hook)
+    return div_(id=f"prize_with_hook_container")(prize_html, hook)
 
 
-# def flag_(id, hidden=False, width=1, left=0, top=0):
-#     """
-#     Generate base HTML for a flag
-#     """
-#     classes = "occluder"
-#     if hidden:
-#         classes += " hidden"
-#     return img_(
-#         id=id,
-#         class_=classes,
-#         src="images/pirate_flag.png",
-#         alt="Flag",
-#         width=f"{width}px",
-#         style=f"position: absolute; top: {top}px; left: {left}px;",
-#         onClick="select(this);",
-#     )
+class Object:
+    def __init__(self, name=""):
+        self.name = name
+
+    def get_html(self):
+        raise NotImplementedError("Subclasses must implement get_html method.")
+
+
+class Chest(Object):
+    def __init__(self, name="", side="left"):
+        super().__init__(name=name)
+        self.side = side
+
+    def get_html(self):
+        items = [
+            img_(
+                id=f"chest_top_image_{self.side}",
+                class_=f"chest_top_image",
+                src="images/chest_top.png",
+                alt="A treasure chest top",
+                style=f"width: {DEFAULT_CHEST_WIDTH}; top: {CHEST_TOP_POSITION_Y}; left: {LEFT_CHEST_POSITION_X if self.side == 'left' else RIGHT_CHEST_POSITION_X};",
+            ),
+            img_(
+                id=f"chest_bottom_image_{self.side}",
+                class_=f"chest_bottom_image",
+                src="images/chest_bottom.png",
+                alt="A treasure chest bottom",
+                style=f"width: {DEFAULT_CHEST_WIDTH}; top: {CHEST_BOTTOM_POSITION_Y}; left: {LEFT_CHEST_POSITION_X if self.side == 'left' else RIGHT_CHEST_POSITION_X};",
+            ),
+        ]
+        return items
+
+
+class Prize(Object):
+    def __init__(self, name=""):
+        super().__init__(name=name)
+
+
+class Coin(Prize):
+    def __init__(self, name="", side="left"):
+        super().__init__(name=name)
+        self.info = COIN_INFO
+        self.side = side
+
+    def get_html(self, additional_style="", additional_class=""):
+        prize_width, _ = (
+            self.info["width"],
+            self.info["height"],
+        )
+
+        prize_left = (
+            self.info["left_x"] if self.side == "left" else self.info["right_x"]
+        )
+
+        prize_top = self.info["y"]
+        return [
+            img_(
+                id=self.name,
+                class_=f"prize {additional_class}",
+                src="images/coin.png",
+                alt="Coin",
+                style=f"width: {prize_width}; top: {prize_top}; left: {prize_left}; {additional_style}",
+            )
+        ]
+
+
+class Hook(Object):
+    def __init__(
+        self,
+        name="",
+        side="left",
+        left=LEFT_HOOK_POSITION_X,
+        top=CHEST_HOOK_POSITION_Y,
+    ):
+        super().__init__(name=name)
+        self.side = side
+        self.left = left
+        self.top = top
+        self.width = DEFAULT_HOOK_WIDTH
+        self.height = DEFAULT_HOOK_HEIGHT
+
+    def get_html(self, additional_style="", additional_class=""):
+        hook = img_(
+            id=self.name,
+            class_=f"hook hook_{self.side} {additional_class}",
+            src="images/hook.png",
+            alt="Chest Hook",
+            style=f"width: {self.width}; height: {self.height}; top: {self.top}; left: {self.left}; {additional_style}",
+        )
+        return [hook]
+
+
+class Flag(Object):
+    def __init__(self, name="", side="left"):
+        super().__init__(name=name)
+        self.side = side
+
+    def get_html(self, additional_style="", additional_class=""):
+        flag = img_(
+            id=self.name,
+            class_=f"occluder {additional_class}",
+            src="images/pirate_flag.png",
+            alt="Flag",
+            style=f"width: {DEFAULT_FLAG_WIDTH}; height: {DEFAULT_FLAG_HEIGHT}; position: absolute; left: {LEFT_FLAG_POSITION_X if self.side == 'left' else RIGHT_FLAG_POSITION_X}; top: {FLAG_POSITION_Y}; {additional_style}",
+        )
+        return [flag]
 
 
 """
@@ -180,8 +226,8 @@ class Trial:
 
         # page 1
         items = []
-        items.append(chest_(id="left", position="left"))
-        items.append(chest_(id="right", position="right"))
+        items.append(chest_(id="left", side="left"))
+        items.append(chest_(id="right", side="right"))
         coin = img_(
             id="initial_coin_to_either",
             class_="prize initial_coin",
@@ -197,8 +243,8 @@ class Trial:
         chest1 = chest_(
             id="1",
             prize_info=COIN_INFO,
-            prize=coin_,
-            position="right",
+            prize=Coin(),
+            side="right",
         )
         chest2 = chest_(
             id="2",
@@ -241,36 +287,24 @@ class OccludedTrial(Trial):
 
         # page 1
         items = []
-        items.append(chest_(position="left"))
-        items.append(chest_(position="right"))
+        items.append(chest_(side="left"))
+        items.append(chest_(side="right"))
 
         coin_side = random.choice(["left", "right"])
-        coin = img_(
-            id="stage_1_coin",
-            class_="prize coin_stage_1 hidden",
-            src="images/coin.png",
-            alt="Coin",
-            style=f"top: {COIN_POSITION_Y}; left: {LEFT_COIN_POSITION_X if coin_side == 'left' else RIGHT_COIN_POSITION_X};",
-        )
+
+        coin = Coin(name="stage_1_coin", side=coin_side).get_html(
+            additional_class="coin_stage_1 hidden"
+        )[0]
 
         items.append(coin)
 
         # add occluder:
-        flag_left = img_(
-            id="initial_occluder",
-            class_="occluder hidden",
-            src="images/pirate_flag.png",
-            alt="Flag",
-            style=f"width: {DEFAULT_FLAG_WIDTH}; height: {DEFAULT_FLAG_HEIGHT}; position: absolute; left: {LEFT_FLAG_POSITION_X}; top: {FLAG_POSITION_Y};",
-        )
-
-        flag_right = img_(
-            id="initial_occluder",
-            class_="occluder hidden",
-            src="images/pirate_flag.png",
-            alt="Flag",
-            style=f"width: {DEFAULT_FLAG_WIDTH}; height: {DEFAULT_FLAG_HEIGHT}; position: absolute; left: {RIGHT_FLAG_POSITION_X}; top: {FLAG_POSITION_Y};",
-        )
+        flag_left = Flag(name="initial_occluder", side="left").get_html(
+            additional_class="hidden"
+        )[0]
+        flag_right = Flag(name="initial_occluder", side="right").get_html(
+            additional_class="hidden"
+        )[0]
 
         items.extend([flag_left, flag_right])
         items.append(div_(id="stage_indicator")(1))
@@ -283,24 +317,19 @@ class OccludedTrial(Trial):
         items = []
 
         if coin_side == "left":
-            chest_left = chest_(
-                prize_info=COIN_INFO,
-                prize=coin_,
-                position="left",
+            self.chest_left = chest_(
+                prize=Coin,
+                side="left",
             )
-            chest_right = chest_(position="right")
+            self.chest_right = chest_(side="right")
         else:
-            chest_left = chest_(position="left")
-            chest_right = chest_(
-                prize_info=COIN_INFO,
-                prize=coin_,
-                position="right",
+            self.chest_left = chest_(side="left")
+            self.chest_right = chest_(
+                prize=Coin,
+                side="right",
             )
 
-        self.chest_left = chest_left
-        self.chest_right = chest_right
-
-        items.extend([chest_left, chest_right])
+        items.extend([self.chest_left, self.chest_right])
 
         hidden_input = input_(
             type_="hidden",
@@ -323,10 +352,8 @@ class OccludedTrial(Trial):
         pages = []
         items = [
             self.chest_left if keep_side == "left" else self.chest_right,
-            prize_with_hook_(
-                prize_info=COIN_INFO, prize=coin_, position=replace_side
-            ),
-            chest_with_hook_(position=replace_side),
+            prize_with_hook_(prize=Coin, side=replace_side),
+            chest_with_hook_(side=replace_side),
         ]
 
         items.append(div_(id="stage_indicator")(2))

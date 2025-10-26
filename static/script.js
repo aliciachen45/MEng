@@ -250,7 +250,7 @@ function stage_1_animation() {
 
 function stage_2_animation() {
     /* Getting coin element */
-
+    console.log(document.getElementById('prize_with_hook_container'));
     const elements = document.getElementById('prize_with_hook_container').children;
 
     for (var object of elements) {
@@ -260,6 +260,7 @@ function stage_2_animation() {
             var prize = object
         }
     }
+
 
 
     const hooks = document.getElementsByClassName('hook');
@@ -277,8 +278,6 @@ function stage_2_animation() {
     }
 
     var chest = document.getElementById(`chest_container_${position}`);
-
-
     let reset_deltax = "";
     let reset_deltay = "";
     if (position == "right") {
