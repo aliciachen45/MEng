@@ -311,7 +311,7 @@ class Trial:
     ):
         self.occluded = occluded
         self.two_stage = two_stage
-        self.prize = prize_class
+        self.prize_class = prize_class
         self.prize_side = prize_side
 
     def get_stage1(self):
@@ -373,7 +373,7 @@ class Trial:
         hidden_input = input_(
             type_="hidden",
             id="choice_input",  # id for JavaScript
-            name="chest_clicked",  # name for the server log
+            name="clicked_side",  # name for the server log
         )
         items.append(hidden_input)
 
@@ -432,7 +432,7 @@ class Trial:
         hidden_input = input_(
             type_="hidden",
             id="choice_input",  # id for JavaScript
-            name="chest_clicked",  # name for the server log
+            name="clicked_side",  # name for the server log
         )
         items.append(hidden_input)
 
@@ -458,23 +458,31 @@ def experiment(uid):
         all_pages = trial.get_stage1().copy()  # Get all pages for stage 1
         page_ind = 0
 
+        trial_data = {
+            "trial_number": trial_num + 1,
+            "prize_side": trial.prize_side,
+        }
+
         while page_ind < len(all_pages):
             print("Displaying page", page_ind + 1, "of", len(all_pages))
             response = yield all_pages[page_ind]
 
             print("Recieved_response:", response)
 
-            if "chest_clicked" in response:
+            if "clicked_side" in response:
                 if page_ind == 1:
-                    chosen_side = response["chest_clicked"]
+                    chosen_side = response["clicked_side"]
                     print("Chosen side:", chosen_side)
 
                     # After choice, add stage 2 pages
                     stage2_pages = trial.get_stage2(keep_side=chosen_side[0])
                     all_pages.extend(stage2_pages)
 
-                data[page_ind] = response
+                    trial_data["Stage 1 Choice"] = response
+                else:
+                    trial_data["Stage 2 Choice"] = response
             page_ind += 1
+        data[trial_num + 1] = trial_data
 
         # for i, page in enumerate(trial.get_stage1()):  # Inject the coin HTML
         #     response = yield page
