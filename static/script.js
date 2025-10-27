@@ -1,24 +1,51 @@
 // static/script.js
-// const chest_listener = document.getElementById('full_chest_container');
-// chest_listener.addEventListener('click', openChest);
 
-// Function to start the animation and automatically submit the form
-function startRotation() {
-    const coin = document.getElementById('coin_image');
-
-    // 1. ADD THE CSS CLASS to the element, which starts the animation
-    coin.classList.add('pop_rotate');
-
-    // 2. Disable the button to prevent double-clicks
-    document.querySelector('button').disabled = false; //change to true later
-
-    // 3. Auto-submit the Kesar form after the animation is complete (2.5 seconds)
-    // window.setTimeout(function () {
-    //     SUBMITTING = false; // Kesar global variable
-    //     document.querySelector('form').submit();
-    // }, 2800); // Wait slightly longer than the 2.5s animation duration
-    return
+function recordChoice(choice) {
+    const hiddenInput = document.getElementById('choice_input');
+    if (hiddenInput) {
+        hiddenInput.value = choice;
+        console.log("Recording choice:", choice);
+    } else {
+        console.error("Fatal: Could not find hidden input #choice_input");
+    }
 }
+
+function revealCoin(coinObject) {
+    console.log("Revealing coin:", coinObject);
+    coinObject.classList.add('prize_reveal_animation');
+    if (coinObject.id.includes('left')) {
+        choice = 'left';
+    } else if (coinObject.id.includes('right')) {
+        choice = 'right';
+    }
+
+    // Record choice
+    recordChoice(choice);
+
+
+    window.setTimeout(function () {
+        SUBMITTING = true;
+        document.querySelector('form').submit("hi");
+    }, 4000);
+}
+
+// // Function to start the animation and automatically submit the form
+// function startRotation() {
+//     const coin = document.getElementById('coin_image');
+
+//     // 1. ADD THE CSS CLASS to the element, which starts the animation
+//     coin.classList.add('pop_rotate');
+
+//     // 2. Disable the button to prevent double-clicks
+//     document.querySelector('button').disabled = false; //change to true later
+
+//     // 3. Auto-submit the Kesar form after the animation is complete (2.5 seconds)
+//     // window.setTimeout(function () {
+//     //     SUBMITTING = false; // Kesar global variable
+//     //     document.querySelector('form').submit();
+//     // }, 2800); // Wait slightly longer than the 2.5s animation duration
+//     return
+// }
 
 function openChest(object) {
     const children = object.children;
@@ -45,14 +72,7 @@ function openChest(object) {
     }
 
     // Record choice
-    const hiddenInput = document.getElementById('choice_input');
-
-    if (hiddenInput) {
-        hiddenInput.value = choice;
-        console.log("Recording choice:", choice);
-    } else {
-        console.error("Fatal: Could not find hidden input #choice_input");
-    }
+    recordChoice(choice);
 
     chest_top.classList.add('open_chest_animation');
 
@@ -77,21 +97,21 @@ function openChest(object) {
 
 }
 
-function swipeRight(object) {
-    // console.log("Swiping right for object:", object_id);
-    // const object = document.getElementById(object_id);
-    children = object.children;
+// function swipeRight(object) {
+//     // console.log("Swiping right for object:", object_id);
+//     // const object = document.getElementById(object_id);
+//     children = object.children;
 
-    for (let i = 0; i < children.length; i++) {
-        console.log("Child found:", children[i]);
-        children[i].classList.add('swipe_right_animation');
-    }
-    // console.log("Object found:", object);
-    // object.classList.add('swipe_right_animation'); // slight delay before starting animation
+//     for (let i = 0; i < children.length; i++) {
+//         console.log("Child found:", children[i]);
+//         children[i].classList.add('swipe_right_animation');
+//     }
+//     // console.log("Object found:", object);
+//     // object.classList.add('swipe_right_animation'); // slight delay before starting animation
 
-    // console.log("Swipe right animation added to object:", object);
-}
-// const prize = document.getElementById('prize')
+//     // console.log("Swipe right animation added to object:", object);
+// }
+// // const prize = document.getElementById('prize')
 
 
 
@@ -122,14 +142,7 @@ function selectChest(object) {
     }
 
     // Record choice
-    const hiddenInput = document.getElementById('choice_input');
-
-    if (hiddenInput) {
-        hiddenInput.value = choice;
-        console.log("Recording choice:", choice);
-    } else {
-        console.error("Fatal: Could not find hidden input #choice_input");
-    }
+    recordChoice(choice);
 
     window.setTimeout(function () {
         SUBMITTING = true;
@@ -189,6 +202,8 @@ function stage_1_animation() {
                 occluder.classList.add('occluder-place-1');
             }
 
+            var occluder_timeout = (occluders.length > 0) ? 1200 : 0;
+
             // Pull occluders down in front of chest. Removing occluder-place-1 will return occluders to their original position
             setTimeout(() => {
                 for (var occluder of occluders) {
@@ -217,9 +232,9 @@ function stage_1_animation() {
 
 
                         // And hide the coin after reaching final position
-                        setTimeout(() => {
-                            coin.classList.add('hidden');
-                        }, 1200);
+                        // setTimeout(() => {
+                        //     coin.classList.add('hidden');
+                        // }, 1200);
 
 
                         // Pull occluders up out of screen
@@ -235,13 +250,13 @@ function stage_1_animation() {
                                 SUBMITTING = true; // Kesar global variable
                                 document.querySelector('form').submit();
                             }, 2000);
-                        }, 2000);
+                        }, occluder_timeout);
 
 
                     }, 1200);
 
                 }, 1200);
-            }, 1200);
+            }, occluder_timeout);
         }, 1200);
     }, initialDelay);
 
@@ -254,7 +269,7 @@ function stage_2_animation() {
     const elements = document.getElementById('prize_with_hook_container').children;
 
     for (var object of elements) {
-        if (object.id == "hooked_prize") {
+        if (object.id.includes("hooked_prize")) {
             prize_position_x = object.style.left;
             prize_position_y = object.style.top;
             var prize = object
@@ -326,6 +341,11 @@ function stage_2_animation() {
                     child.style.left = `calc(${hook_posreset_x} - ${hook_pos2_x} + ${child.style.left})`;
                     child.style.top = `calc(${hook_posreset_y} - ${hook_pos2_y} + ${child.style.top})`;
                 }
+                // Submit to kesar
+                window.setTimeout(function () {
+                    SUBMITTING = true; // Kesar global variable
+                    document.querySelector('form').submit();
+                }, 2000);
             }, 1200);
         }, 1200);
 
