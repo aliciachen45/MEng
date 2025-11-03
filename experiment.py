@@ -186,32 +186,146 @@ class Prize(Object):
 
 
 class Coin(Prize):
-    def __init__(self, name="", side="left", clickable=False):
+    def __init__(self, name="", side="left", clickable=False, x=None, y=None):
         super().__init__(name=name)
         self.info = COIN_INFO
         self.side = side
         self.clickable = clickable
         self.onclick_fn = "revealCoin"
+        self.width = self.info["width"]
+        if x:
+            self.x = x
+        else:
+            self.x = (
+                self.info["left_x"]
+                if self.side == "left"
+                else self.info["right_x"]
+            )
+
+        if y:
+            self.y = y
+        else:
+            self.y = self.info["y"]
 
     def get_html(self, additional_style="", additional_class=""):
-        prize_width, _ = (
-            self.info["width"],
-            self.info["height"],
-        )
-
-        prize_left = (
-            self.info["left_x"] if self.side == "left" else self.info["right_x"]
-        )
-
-        prize_top = self.info["y"]
         return img_(
             id=self.name,
             class_=f"prize {additional_class}",
             src="images/coin.png",
             alt="Coin",
             onClick=f"{self.onclick_fn}(this);" if self.clickable else "",
-            style=f"width: {prize_width}; top: {prize_top}; left: {prize_left}; {additional_style}; {'cursor: pointer;' if self.clickable else ''}",
+            style=f"width: {self.width}; top: {self.y}; left: {self.x}; {additional_style}; {'cursor: pointer;' if self.clickable else ''}",
         )
+
+
+class Bag(Prize):
+    def __init__(self, name="", side="left", open=True):
+        super().__init__(name=name)
+        self.side = side
+        self.open = open
+        self.x = (
+            LEFT_BAG_POSITION_X if self.side == "left" else RIGHT_BAG_POSITION_X
+        )
+        self.y = BAG_POSITION_Y
+        self.height = (
+            DEFAULT_OPEN_BAG_HEIGHT if self.open else DEFAULT_CLOSED_BAG_HEIGHT
+        )
+        self.width = DEFAULT_BAG_WIDTH
+
+    def get_html(self, additional_style="", additional_class=""):
+        src = "images/open_bag.png" if self.open else "images/closed_bag.png"
+        return img_(
+            id=self.name,
+            class_=f"prize prize_bag {additional_class}",
+            src=src,
+            alt="Bag",
+            style=f"width: {self.width}; height: {self.height}; position: absolute; left: {self.x}; top: {self.y}; {additional_style}; z-index: 2;",
+        )
+
+
+class FilledBag(Bag):
+    def __init__(
+        self, name="", side="left", open: bool = True, num_coins: int = 1
+    ):
+        super().__init__(name=name, side=side, open=open)
+        self.num_coins = num_coins
+        if self.num_coins not in [1, 2, 4]:
+            raise ValueError("num_coins must be 1, 2, or 4")
+
+    def get_html(self, additional_style="", additional_class=""):
+        items = []
+
+        # Get the bag wrapper
+        items.append(
+            super().get_html(
+                additional_style=additional_style,
+                additional_class=additional_class,
+            )
+        )
+
+        # Add coins inside the bag
+        for i, (coin_x, coin_y) in enumerate(self.get_coin_arrangements()):
+            coin = Coin(
+                name=f"filled_bag_coin_{self.side}_{i}",
+                side=self.side,
+                x=coin_x,
+                y=coin_y,
+            ).get_html(
+                additional_style=additional_style,
+                additional_class=additional_class,
+            )
+            items.append(coin)
+
+        return div_(
+            id=self.name,
+            class_=f"filled_bag_container",
+            style=f"display: flex; justify-content: flex-start;",
+        )(*items)
+
+    def get_coin_arrangements(self):
+        # Define coin arrangement logic here
+
+        positions = []
+        if self.num_coins == 1:
+            coin_y = (
+                f"calc({BAG_POSITION_Y} + 3*{DEFAULT_OPEN_BAG_HEIGHT}/4 - 1vh)"
+            )
+            coin_x = f"calc({self.x} + {self.width}/2 - {COIN_INFO['width']}/2)"
+            positions.append((coin_x, coin_y))
+        elif self.num_coins == 2:
+            coin_y = f"calc({BAG_POSITION_Y} + 3*{DEFAULT_OPEN_BAG_HEIGHT}/5)"
+            coin_x1 = (
+                f"calc({self.x} + 2*{self.width}/7 - {COIN_INFO['width']}/2)"
+            )
+            coin_x2 = (
+                f"calc({self.x} + 5*{self.width}/7 - {COIN_INFO['width']}/2)"
+            )
+            positions.append((coin_x1, coin_y))
+            positions.append((coin_x2, coin_y))
+        elif self.num_coins == 4:
+            coin_y1 = (
+                f"calc({BAG_POSITION_Y} + 3*{DEFAULT_OPEN_BAG_HEIGHT}/4 - 1vh)"
+            )
+            coin_y2 = (
+                f"calc({BAG_POSITION_Y} + 2.3*{DEFAULT_OPEN_BAG_HEIGHT}/4)"
+            )
+            coin_y3 = f"calc({BAG_POSITION_Y} + 1.6*{DEFAULT_OPEN_BAG_HEIGHT}/4 + 1vh)"
+            coin_x1 = (
+                f"calc({self.x} + {self.width}/2 - {COIN_INFO['width']}/2)"
+            )
+            coin_x2 = (
+                f"calc({self.x} + {self.width}/5 - {COIN_INFO['width']}/2)"
+            )
+            coin_x3 = (
+                f"calc({self.x} + 4*{self.width}/5 - {COIN_INFO['width']}/2)"
+            )
+
+            positions.append((coin_x1, coin_y1))
+            positions.append((coin_x2, coin_y2))
+            positions.append((coin_x3, coin_y2))
+            positions.append((coin_x1, coin_y3))
+
+        return positions
 
 
 class Hook(Object):
@@ -269,7 +383,7 @@ class PrizeWithHook(Object):
     def get_html(self, additional_style="", additional_class=""):
         # Get prize object
         prize_html = self.prize.get_html(
-            additional_style="z-index: 4;", additional_class="hidden"
+            additional_style="z-index: 9;", additional_class="hidden"
         )
 
         prize_top = self.prize.info["y"]
@@ -329,11 +443,17 @@ class Trial:
         if not self.prize_side:
             self.prize_side = random.choice(["left", "right"])
 
-        coin = Coin(name="stage_1_coin", side=self.prize_side).get_html(
-            additional_class="coin_stage_1 hidden"
-        )
+        # prize = Coin(name="stage_1_coin", side=self.prize_side).get_html(
+        #     additional_class="coin_stage_1 hidden"
+        # )
+        prize = FilledBag(
+            name=f"prize_{self.prize_side}",
+            side=self.prize_side,
+            open=True,
+            num_coins=4,
+        ).get_html(additional_class="hidden")
 
-        items.append(coin)
+        items.append(prize)
 
         # add occluder:
         if self.occluded:
@@ -450,7 +570,7 @@ def experiment(uid):
 
     # trial_pages = [coin]
     trial_num = 0
-    for trial_num in range(3):
+    for trial_num in range(1):
         print("Starting trial num: ", trial_num + 1)
 
         trial = Trial(occluded=True, two_stage=True, prize_class=Coin)
@@ -483,41 +603,58 @@ def experiment(uid):
                     trial_data["Stage 2 Choice"] = response
             page_ind += 1
         data[trial_num + 1] = trial_data
+    # items = []
+    # items.append(
+    #     FilledBag(
+    #         name="test_bag", side="left", open=False, num_coins=4
+    #     ).get_html(additional_style="z-index: 5;")
+    # )
 
-        # for i, page in enumerate(trial.get_stage1()):  # Inject the coin HTML
-        #     response = yield page
-        #     if response["chest_clicked"] == "left":
+    # items.append(Chest(side="left").get_html())
 
-        #     data[i] = response
+    # items.append(
+    #     FilledBag(
+    #         name="test_bag", side="right", open=True, num_coins=4
+    #     ).get_html(additional_style="z-index: 5;")
+    # )
 
-        # yield div_(style="display: flex;")(
-        #     chest_with_hook_(position="right"),
-        #     chest_with_hook_(position="left"),
-        # )
+    # items.append(Chest(side="right").get_html())
+    # yield div_(style="display: flex;")(*items)
 
-        # trial = Trial()
-        # test = svg_(
-        #     width="400",
-        #     height="400",
-        #     viewBox="0 0 400 400",
-        #     style="position: absolute; top: 0; left: 0;",
-        # )(
-        #     path_(
-        #         id="spiralPath",
-        #         fill="none",
-        #         d="M 200 200 L 200 10 C 200 10 390 10 390 200 C 390 390 10 390 10 200 C 10 10 380 10 380 200 C 380 380 20 380 20 200 C 20 20 370 20 370 200 C 370 370 30 370 30 200 C 30 30 360 30 360 200",
-        #     )
-        # )
+    # for i, page in enumerate(trial.get_stage1()):  # Inject the coin HTML
+    #     response = yield page
+    #     if response["chest_clicked"] == "left":
 
-        # dot = div_(id="dot")()
-        # # yield dot
-        # yield div_()(test, dot, gsap_lib)
+    #     data[i] = response
 
-        # yield chest_()
-        # yield visual.get_full_chest_()
-        # print("asdf d", animal)
-        # text_input_("rating", f"Do you have a pet {animal}? (y/n)"),
-        # submit_(),
+    # yield div_(style="display: flex;")(
+    #     chest_with_hook_(position="right"),
+    #     chest_with_hook_(position="left"),
+    # )
 
-        # data[animal] = response["rating"]
+    # trial = Trial()
+    # test = svg_(
+    #     width="400",
+    #     height="400",
+    #     viewBox="0 0 400 400",
+    #     style="position: absolute; top: 0; left: 0;",
+    # )(
+    #     path_(
+    #         id="spiralPath",
+    #         fill="none",
+    #         d="M 200 200 L 200 10 C 200 10 390 10 390 200 C 390 390 10 390 10 200 C 10 10 380 10 380 200 C 380 380 20 380 20 200 C 20 20 370 20 370 200 C 370 370 30 370 30 200 C 30 30 360 30 360 200",
+    #     )
+    # )
+
+    # dot = div_(id="dot")()
+    # # yield dot
+    # yield div_()(test, dot, gsap_lib)
+
+    # yield chest_()
+    # yield visual.get_full_chest_()
+    # print("asdf d", animal)
+    # text_input_("rating", f"Do you have a pet {animal}? (y/n)"),
+    # submit_(),
+
+    # data[animal] = response["rating"]
     return data  # to be logged

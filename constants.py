@@ -14,13 +14,18 @@ FLAG_WIDTH = 594
 HOOK_HEIGHT = 357
 HOOK_WIDTH = 456
 
+OPEN_BAG_HEIGHT = 1113
+OPEN_BAG_WIDTH = 852
+CLOSED_BAG_HEIGHT = 484
+CLOSED_BAG_WIDTH = 374
+
 ######################################################################
 # Desired image dimensions in vw/vh, while maintaining aspect ratios
 ######################################################################
 
 
 # CHEST
-DEFAULT_CHEST_WIDTH = "30vw"  # vw
+DEFAULT_CHEST_WIDTH = "35vw"  # vw
 DEFAULT_CHEST_TOP_HEIGHT = (
     f"calc({CHEST_TOP_HEIGHT / CHEST_TOP_WIDTH} * {DEFAULT_CHEST_WIDTH})"  # vw
 )
@@ -35,8 +40,8 @@ CHEST_BOTTOM_POSITION_Y = (
 
 
 # COIN
-DEFAULT_COIN_WIDTH = "6vw"  # vw
-DEFAULT_COIN_HEIGHT = "6vw"  # vw
+DEFAULT_COIN_WIDTH = "5vw"  # vw
+DEFAULT_COIN_HEIGHT = "5vw"  # vw
 
 LEFT_COIN_POSITION_X = f"calc(25vw - {DEFAULT_COIN_WIDTH}/2"  # vw
 RIGHT_COIN_POSITION_X = f"calc(75vw - {DEFAULT_COIN_WIDTH}/2"  # vw
@@ -83,3 +88,17 @@ CHEST_HOOK_POSITION_Y = f"calc({CHEST_TOP_POSITION_Y} - {DEFAULT_HOOK_HEIGHT} + 
 
 LEFT_HOOK_POSITION_X = f"calc(25vw - 7*{DEFAULT_HOOK_WIDTH}/8)"  # vw
 RIGHT_HOOK_POSITION_X = f"calc(75vw - {DEFAULT_HOOK_WIDTH}/8)"  # vw
+
+# BAG
+DEFAULT_BAG_WIDTH = f"calc({DEFAULT_CHEST_WIDTH}/2.2)"  # vw
+DEFAULT_OPEN_BAG_HEIGHT = (
+    f"calc({OPEN_BAG_HEIGHT / OPEN_BAG_WIDTH} * {DEFAULT_BAG_WIDTH})"  # vw
+)
+DEFAULT_CLOSED_BAG_HEIGHT = (
+    f"calc({CLOSED_BAG_HEIGHT / CLOSED_BAG_WIDTH} * {DEFAULT_BAG_WIDTH})"  # vw
+)
+BAG_POSITION_Y = (
+    f"calc({CHEST_BOTTOM_POSITION_Y} - {DEFAULT_OPEN_BAG_HEIGHT}/2 - 2vh)"  # vw
+)
+LEFT_BAG_POSITION_X = f"calc(25vw - {DEFAULT_BAG_WIDTH}/2)"  # vw
+RIGHT_BAG_POSITION_X = f"calc(75vw - {DEFAULT_BAG_WIDTH}/2)"  # vw

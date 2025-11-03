@@ -27,7 +27,7 @@ body {
     }
 }
 
-@keyframes open_chest {
+@keyframes open_chest_rumble {
     0% {
         transform: rotateY(0deg);
     }
@@ -68,6 +68,22 @@ body {
     100% {
         transform: translateY(-50px);
         z-index: -1;
+    }
+}
+
+@keyframes open_chest_simple {
+    100% {
+        transform: translateY(-10vh)
+    }
+}
+
+@keyframes close_chest_simple {
+    0% {
+        transform: translateY(-10vh)
+    }
+
+    100% {
+        transform: translateY(0vh)
     }
 }
 
@@ -117,14 +133,14 @@ body {
     position: absolute;
     /* z-index: 5; */
     z-index: 1;
-    transition: all 1.2s ease-in-out;
+    transition: all 1.2s ease-in-out !important;
 
     /* TODO: CHANGE LATER back to 1 */
 }
 
 .hook {
     position: absolute;
-    z-index: 5;
+    z-index: 10;
     transition: all 1.2s ease-in-out;
 }
 
@@ -143,19 +159,19 @@ body {
 }
 
 .occluder {
-    z-index: 4;
+    z-index: 10;
     transition: all 1.2s ease-in-out;
 }
 
 .chest_bottom_image {
     position: absolute;
-    z-index: 2;
+    z-index: 5;
     transform-origin: top;
 }
 
 .chest_top_image {
     position: absolute;
-    z-index: 3;
+    z-index: 6;
     transform-origin: bottom;
 }
 
@@ -163,29 +179,61 @@ body {
 
 /*
 Stage 1 animation positions
+TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
 */
 
-.prize-place-reset {
-    left: 47vw !important;
+.prize-place-left-reset {
+    /* left: 47vw !important;
     top: -15vh !important;
-    opacity: 1;
+    opacity: 1; */
+    transform: translateY(-100vh) translateX(25vw) !important;
+
 }
 
 /* Top mid*/
-.prize-place-1 {
-    left: 47vw !important;
-    top: 10vh !important;
+.prize-place-left-1 {
+    /* left: 47vw !important;
+    top: 10vh !important; */
+    transform: translateY(-50vh) translateX(25vw) !important;
     visibility: visible;
 
 }
 
 /* Center mid*/
-.prize-place-2 {
-    left: 47vw !important;
-    top: 50vh !important;
+.prize-place-left-2 {
+    /* left: 47vw !important;
+    top: 50vh !important; */
+    visibility: visible;
+    transform: translateX(25vw) !important;
+}
+
+.prize-place-right-reset {
+    /* left: 47vw !important;
+    top: -15vh !important;
+    opacity: 1; */
+    transform: translateY(-100vh) translateX(-25vw) !important;
+
+}
+
+/* Top mid*/
+.prize-place-right-1 {
+    /* left: 47vw !important;
+    top: 10vh !important; */
+    transform: translateY(-50vh) translateX(-25vw) !important;
     visibility: visible;
 
 }
+
+/* Center mid*/
+.prize-place-right-2 {
+    /* left: 47vw !important;
+    top: 50vh !important; */
+    visibility: visible;
+    transform: translateX(-25vw) !important;
+}
+
+
+
 
 /* Occluder animations */
 .occluder-place-reset {
@@ -212,15 +260,23 @@ Stage 1 animation positions
 
 
 /* 
-Choice task animations
+Keyframe animations
 */
 .prize_reveal_animation {
     animation: prize_reveal 2.5s ease-in-out forwards;
     /* z-index: 4; */
 }
 
-.open_chest_animation {
-    animation: open_chest 3s ease-in-out forwards;
+.open_chest_rumble_animation {
+    animation: open_chest_rumble 3s ease-in-out forwards;
+}
+
+.open_chest_simple_animation {
+    animation: open_chest_simple 1s ease-in-out forwards;
+}
+
+.close_chest_simple_animation {
+    animation: close_chest_simple 0.3s ease-in-out forwards;
 }
 
 .swipe_up_animation {

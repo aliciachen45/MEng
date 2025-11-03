@@ -1,6 +1,8 @@
 TODOS:
 
-
+- Next step: Hooking onto a prize, making a prize hide behind a chest (bag or anything, not just a specific coin)
+- Sound
+- Animations for revealing a prize
 Animations:
 + Flyaway (coin exiting)
 + Hook enter + grab chest and exit out
