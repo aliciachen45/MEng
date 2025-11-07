@@ -1,5 +1,5 @@
 // static/script.js
-
+// const blocker = document.getElementById('click-blocker');
 function recordChoice(choice) {
     const hiddenInput = document.getElementById('choice_input');
     if (hiddenInput) {
@@ -21,7 +21,6 @@ function revealCoin(coinObject) {
 
     // Record choice
     recordChoice(choice);
-
 
     window.setTimeout(function () {
         SUBMITTING = true;
@@ -51,6 +50,7 @@ function placeCoinsInBag(prize_place_positions) {
 
 
 function openChest(object) {
+    // blocker.classList.remove('hidden');
     const children = object.children;
 
     let choice = "unknown";
@@ -84,7 +84,7 @@ function openChest(object) {
     if (prize_bag_container != null) {
         console.log("Prize has been found !")
         setTimeout(() => {
-            revealCoinsFromBag(prize_bag_container);
+            revealCoinsAndBag(prize_bag_container);
         }, 2000); // reveal prize after chest opens
     } else {
         console.log("No prize for this chest")
@@ -94,15 +94,17 @@ function openChest(object) {
     console.log("Playing audio");
     audio.play();
 
-    window.setTimeout(function () {
-        SUBMITTING = true;
-        document.querySelector('form').submit("hi");
-    }, 5000);
+    // window.setTimeout(function () {
+    //     SUBMITTING = true;
+    //     document.querySelector('form').submit("hi");
+    // }, 5000);
+    // blocker.classList.add('hidden');
+
 }
 
-function revealCoinsFromBag(bagContainerObj) {
+function revealCoinsAndBag(bagContainerObj) {
     console.log("Revealing coin from bag:", bagContainerObj);
-
+    const staggerDelayMs = 300;
     const bagContainerChildren = bagContainerObj.children
     let prizeBag = null;
     let prizeCoins = [];
@@ -115,23 +117,43 @@ function revealCoinsFromBag(bagContainerObj) {
         }
     }
 
+
     console.log("Found prize bag:", prizeBag);
     console.log("Found prize coins:", prizeCoins);
 
 
+
     // TODO: Change this later to match the correct reveal animations
+
+    // 1. Bring bag up
+
+    delta_y = `calc(${prizeBag.style.height} * 2/3)`;
+    console.log("Delta Y for bag rise:", delta_y);
+
     for (var child of bagContainerChildren) {
-        child.classList.add('prize_reveal_animation');
+        child.style.top = `calc(${child.style.top} - ${delta_y})`;
     }
+
+    // 2. Open bag 
+    setTimeout(() => {
+        prizeBag.src = "/images/open_bag.png";
+
+        setTimeout(() => {
+            // 3. Reveal coins one by one, starting with the highest coin (last in list)
+            for (let i = prizeCoins.length - 1; i >= 0; i--) {
+                setTimeout(() => {
+                    prizeCoins[i].classList.add('prize_reveal_animation');
+                }, (prizeCoins.length - 1 - i) * staggerDelayMs);
+            }
+        }, 500);
+    }, 1200);
+
 
 }
 
 
 function selectChest(object) {
     console.log("Selecting object:", object);
-    // root = document.documentElement;
-    // root.style.setProperty('--animation-speed', '1s');
-    // object.classList.add('pulse_animation');
     var audio = new Audio("../audio/pop.mp3");
     audio.play();
 
