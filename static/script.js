@@ -49,39 +49,23 @@ function placeCoinsInBag(prize_place_positions) {
     }
 }
 
-// // Function to start the animation and automatically submit the form
-// function startRotation() {
-//     const coin = document.getElementById('coin_image');
-
-//     // 1. ADD THE CSS CLASS to the element, which starts the animation
-//     coin.classList.add('pop_rotate');
-
-//     // 2. Disable the button to prevent double-clicks
-//     document.querySelector('button').disabled = false; //change to true later
-
-//     // 3. Auto-submit the Kesar form after the animation is complete (2.5 seconds)
-//     // window.setTimeout(function () {
-//     //     SUBMITTING = false; // Kesar global variable
-//     //     document.querySelector('form').submit();
-//     // }, 2800); // Wait slightly longer than the 2.5s animation duration
-//     return
-// }
 
 function openChest(object) {
     const children = object.children;
 
     let choice = "unknown";
-    let prize = null;
+    let prize_bag_container = null;
     let chest_top = null;
 
     for (var child of children) {
         console.log("Child found:", child);
         if (child.id.includes('chest_top_image')) {
             chest_top = child;
-        } else if (child.id.includes('prize_')) {
-            prize = child
+        } else if (child.classList.contains('bag_container')) {
+            prize_bag_container = child;
         }
     }
+    console.log('Prize_bag', prize_bag_container);
 
     // Find choice based on which chest was clicked
 
@@ -97,10 +81,10 @@ function openChest(object) {
     chest_top.classList.add('open_chest_rumble_animation');
 
     // Reveal Prize if there is one
-    if (prize) {
+    if (prize_bag_container != null) {
         console.log("Prize has been found !")
         setTimeout(() => {
-            prize.classList.add('prize_reveal_animation');
+            revealCoinsFromBag(prize_bag_container);
         }, 2000); // reveal prize after chest opens
     } else {
         console.log("No prize for this chest")
@@ -114,25 +98,33 @@ function openChest(object) {
         SUBMITTING = true;
         document.querySelector('form').submit("hi");
     }, 5000);
-
 }
 
-// function swipeRight(object) {
-//     // console.log("Swiping right for object:", object_id);
-//     // const object = document.getElementById(object_id);
-//     children = object.children;
+function revealCoinsFromBag(bagContainerObj) {
+    console.log("Revealing coin from bag:", bagContainerObj);
 
-//     for (let i = 0; i < children.length; i++) {
-//         console.log("Child found:", children[i]);
-//         children[i].classList.add('swipe_right_animation');
-//     }
-//     // console.log("Object found:", object);
-//     // object.classList.add('swipe_right_animation'); // slight delay before starting animation
+    const bagContainerChildren = bagContainerObj.children
+    let prizeBag = null;
+    let prizeCoins = [];
 
-//     // console.log("Swipe right animation added to object:", object);
-// }
-// // const prize = document.getElementById('prize')
+    for (var child of bagContainerChildren) {
+        if (child.classList.contains('prize_bag')) {
+            prizeBag = child;
+        } else {
+            prizeCoins.push(child);
+        }
+    }
 
+    console.log("Found prize bag:", prizeBag);
+    console.log("Found prize coins:", prizeCoins);
+
+
+    // TODO: Change this later to match the correct reveal animations
+    for (var child of bagContainerChildren) {
+        child.classList.add('prize_reveal_animation');
+    }
+
+}
 
 
 function selectChest(object) {
@@ -179,13 +171,20 @@ function stage_1_animation() {
         return;
     }
 
-    const bag_container = document.getElementsByClassName('filled_bag_container');
+    const bag_container = document.getElementsByClassName('bag_container');
     if (bag_container.length === 0) {
         console.error("No bag element found for animation.");
         return;
     }
     // const bag = bag_container[0].children[0];
-    var bag = prizes[0];
+    // var bag = prizes[0];
+    let bag = null;
+    for (var prize of prizes) {
+        if (prize.classList.contains('prize_bag')) {
+            bag = prize;
+        }
+    }
+
     const chest_top = document.getElementsByClassName('chest_top_image');
     console.log("Found chest tops for animation:", chest_top);
 
@@ -315,10 +314,10 @@ function stage_1_animation() {
 
 
                                             // Submit to kesar
-                                            // window.setTimeout(function () {
-                                            //     SUBMITTING = true; // Kesar global variable
-                                            //     document.querySelector('form').submit();
-                                            // }, 2000);
+                                            window.setTimeout(function () {
+                                                SUBMITTING = true; // Kesar global variable
+                                                document.querySelector('form').submit();
+                                            }, 2000);
                                         }, occluder_timeout);
                                     }, 500);
 
@@ -336,16 +335,6 @@ function stage_1_animation() {
 
 function stage_2_animation() {
     /* Getting coin element */
-    console.log(document.getElementById('prize_with_hook_container'));
-    const elements = document.getElementById('prize_with_hook_container').children;
-
-    for (var object of elements) {
-        if (object.id.includes("hooked_prize")) {
-            prize_position_x = object.style.left;
-            prize_position_y = object.style.top;
-            var prize = object
-        }
-    }
 
 
     const hooks = document.getElementsByClassName('hook');
@@ -359,6 +348,16 @@ function stage_2_animation() {
         } else if (object.id.includes('chest')) {
             hook_pos2_x = object.style.left;
             hook_pos2_y = object.style.top;
+        }
+    }
+
+    const all_prize_elements = document.getElementsByClassName('prize');
+    const prize_elements = [];
+    const original_prize_positions = [];
+    for (var object of all_prize_elements) {
+        if (object.id.includes(position)) {
+            prize_elements.push(object);
+            original_prize_positions.push(({ left: object.style.left, top: object.style.top }));
         }
     }
 
@@ -379,18 +378,29 @@ function stage_2_animation() {
     hook_posreset_y = `calc(${hook_pos1_y} + ${reset_deltay})`;
 
     // Resetting positions
-    prize.style.left = `calc(${prize_position_x} + ${reset_deltax})`;
-    prize.style.top = `calc(${prize_position_y} + ${reset_deltay})`;
+    // new_prize.style.left = `calc(${prize_position_x} + ${reset_deltax})`;
+    // new_prize.style.top = `calc(${prize_position_y} + ${reset_deltay})`;
+    for (let i = 0; i < prize_elements.length; i++) {
+        prize_elements[i].style.left = `calc(${original_prize_positions[i].left} + ${reset_deltax})`;
+        prize_elements[i].style.top = `calc(${original_prize_positions[i].top} + ${reset_deltay})`;
+    }
 
     hook.style.left = hook_posreset_x;
     hook.style.top = hook_posreset_y;
 
     hook.classList.remove('hidden');
-    prize.classList.remove('hidden');
+    for (var obj of prize_elements) {
+        obj.classList.remove('hidden');
+    }
 
     setTimeout(() => {
-        prize.style.left = prize_position_x;
-        prize.style.top = prize_position_y;
+        // Move prize in front of chest
+        for (let i = 0; i < prize_elements.length; i++) {
+            prize_elements[i].style.left = original_prize_positions[i].left;
+            prize_elements[i].style.top = original_prize_positions[i].top;
+        }
+        // new_prize.style.left = prize_position_x;
+        // new_prize.style.top = prize_position_y;
 
         hook.style.left = hook_pos1_x;
         hook.style.top = hook_pos1_y;

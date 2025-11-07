@@ -40,14 +40,14 @@ import random
 # )(*items)
 
 
-def coin_(id, additional_style="", additional_class=""):
-    """
-    Generate base HTML for a coin
-    """
+# def coin_(id, additional_style="", additional_class=""):
+#     """
+#     Generate base HTML for a coin
+#     """
 
-    return Coin(name=id).get_html(
-        additional_style=additional_style, additional_class=additional_class
-    )
+#     return Coin(name=id).get_html(
+#         additional_style=additional_style, additional_class=additional_class
+#     )
 
 
 def chest_with_hook_(side="left"):
@@ -147,12 +147,26 @@ class ChestShell(Object):
 
 class Chest(Object):
     def __init__(
-        self, name="", side="left", clickable=False, prize=None, onclick_fn=None
+        self,
+        name="",
+        side="left",
+        clickable=False,
+        prize_class=None,
+        prize=None,
+        onclick_fn=None,
     ):
         super().__init__(name=name, clickable=clickable)
         self.side = side
-        self.prize = prize
         self.onclick_fn = onclick_fn
+        if not prize:
+            if prize_class:
+                self.prize = prize_class(
+                    name=f"prize_image_{self.side}", side=self.side
+                )
+            else:
+                self.prize = None
+        else:
+            self.prize = prize
 
     def get_html(self, additional_style=""):
         items = ChestShell(
@@ -160,12 +174,7 @@ class Chest(Object):
         ).get_html(additional_style=additional_style)
 
         if self.prize:
-            prize_object = self.prize(
-                name=f"prize_image_{self.side}", side=self.side
-            )
-            items.append(
-                prize_object.get_html(additional_style=additional_style)
-            )
+            items.append(self.prize.get_html(additional_style=additional_style))
 
             # add the sound effect
         else:
@@ -185,7 +194,7 @@ class Prize(Object):
         self.clickfn_mutable = False
 
 
-class Coin(Prize):
+class Coin(Object):
     def __init__(self, name="", side="left", clickable=False, x=None, y=None):
         super().__init__(name=name)
         self.info = COIN_INFO
@@ -219,10 +228,13 @@ class Coin(Prize):
 
 
 class Bag(Prize):
-    def __init__(self, name="", side="left", open=True):
+    def __init__(self, name="", side="left", open=True, clickable=False):
         super().__init__(name=name)
         self.side = side
         self.open = open
+        self.clickable = clickable
+        self.onclick_fn = "revealCoinsFromBag"
+        self.info = BAG_INFO
         self.x = (
             LEFT_BAG_POSITION_X if self.side == "left" else RIGHT_BAG_POSITION_X
         )
@@ -239,29 +251,26 @@ class Bag(Prize):
             class_=f"prize prize_bag {additional_class}",
             src=src,
             alt="Bag",
-            style=f"width: {self.width}; height: {self.height}; position: absolute; left: {self.x}; top: {self.y}; {additional_style}; z-index: 2;",
+            style=f"width: {self.width}; height: {self.height}; position: absolute; left: {self.x}; top: {self.y}; {additional_style}; ",
         )
 
 
 class FilledBag(Bag):
     def __init__(
-        self, name="", side="left", open: bool = True, num_coins: int = 1
+        self,
+        name="",
+        side="left",
+        open: bool = False,
+        num_coins: int = 1,
+        clickable=False,
     ):
-        super().__init__(name=name, side=side, open=open)
+        super().__init__(name=name, side=side, open=open, clickable=clickable)
         self.num_coins = num_coins
         if self.num_coins not in [1, 2, 4]:
             raise ValueError("num_coins must be 1, 2, or 4")
 
     def get_html(self, additional_style="", additional_class=""):
         items = []
-
-        # Get the bag wrapper
-        items.append(
-            super().get_html(
-                additional_style=additional_style,
-                additional_class=additional_class,
-            )
-        )
 
         # Add coins inside the bag
         for i, (coin_x, coin_y) in enumerate(self.get_coin_arrangements()):
@@ -276,10 +285,18 @@ class FilledBag(Bag):
             )
             items.append(coin)
 
+        # Get the bag wrapper
+        items.append(
+            super().get_html(
+                additional_style=additional_style,
+                additional_class=additional_class,
+            )
+        )
         return div_(
-            id=self.name,
-            class_=f"filled_bag_container",
-            style=f"display: flex; justify-content: flex-start;",
+            id=f"{self.name}_bag",
+            class_=f"bag_container",
+            onClick=f"{self.onclick_fn}(this);" if self.clickable else "",
+            style=f"display: flex; justify-content: flex-start; {'cursor: pointer;' if self.clickable else ''}",
         )(*items)
 
     def get_coin_arrangements(self):
@@ -375,15 +392,16 @@ class PrizeWithHook(Object):
     Generate base HTML for a coin with hook
     """
 
-    def __init__(self, prize, side="left"):
+    def __init__(self, prize: Prize, side="left"):
         super().__init__()
         self.side = side
-        self.prize = prize(name=f"hooked_prize_{side}", side=self.side)
+        self.prize = prize
 
     def get_html(self, additional_style="", additional_class=""):
         # Get prize object
         prize_html = self.prize.get_html(
-            additional_style="z-index: 9;", additional_class="hidden"
+            additional_style="z-index: 9;",
+            additional_class="hidden",
         )
 
         prize_top = self.prize.info["y"]
@@ -397,9 +415,9 @@ class PrizeWithHook(Object):
         hook_y = f"calc({prize_top} - {DEFAULT_HOOK_HEIGHT} + 2vh)"
 
         if self.side == "left":
-            hook_x = f"calc({prize_left} + {self.prize.info['width']} - {DEFAULT_HOOK_WIDTH})"
+            hook_x = LEFT_HOOK_POSITION_X
         else:
-            hook_x = prize_left
+            hook_x = RIGHT_HOOK_POSITION_X
 
         # Get hook object
         hook = Hook(
@@ -420,12 +438,10 @@ Training types: 2 chest,
 
 
 class Trial:
-    def __init__(
-        self, occluded=False, two_stage=False, prize_class=None, prize_side=None
-    ):
+    def __init__(self, trial_info, occluded=False, prize_side=None):
+        # trial_info: {stage 1: {include: True/False, prize_coins: int}, stage 2: {include: True/False, prize_coins: int}}
         self.occluded = occluded
-        self.two_stage = two_stage
-        self.prize_class = prize_class
+        self.trial_info = trial_info
         self.prize_side = prize_side
 
     def get_stage1(self):
@@ -443,17 +459,15 @@ class Trial:
         if not self.prize_side:
             self.prize_side = random.choice(["left", "right"])
 
-        # prize = Coin(name="stage_1_coin", side=self.prize_side).get_html(
-        #     additional_class="coin_stage_1 hidden"
-        # )
-        prize = FilledBag(
+        prize_bag = FilledBag(
             name=f"prize_{self.prize_side}",
             side=self.prize_side,
             open=True,
-            num_coins=4,
-        ).get_html(additional_class="hidden")
+            num_coins=self.trial_info["stage_1"]["prize_coins"],
+        )
+        prize_html = prize_bag.get_html(additional_class="hidden")
 
-        items.append(prize)
+        items.append(prize_html)
 
         # add occluder:
         if self.occluded:
@@ -474,7 +488,12 @@ class Trial:
 
         items = []
 
-        onclick_fn = "selectChest" if self.two_stage else "openChest"
+        # setting onclick fn depending on whether stage 2 is included
+        onclick_fn = (
+            "selectChest"
+            if self.trial_info["stage_2"]["include"]
+            else "openChest"
+        )
 
         self.left.clickable = True
         self.right.clickable = True
@@ -482,10 +501,11 @@ class Trial:
         self.left.onclick_fn = onclick_fn
         self.right.onclick_fn = onclick_fn
 
+        prize_bag.open = False
         if self.prize_side == "left":
-            self.left.prize = self.prize_class
+            self.left.prize = prize_bag
         else:
-            self.right.prize = self.prize_class
+            self.right.prize = prize_bag
 
         items.extend([self.left.get_html(), self.right.get_html()])
 
@@ -505,7 +525,7 @@ class Trial:
 
     def get_stage2(self, keep_side):
         print("Generating stage 2 pages for chosen side:", keep_side)
-        if not self.two_stage:
+        if not self.trial_info["stage_2"]["include"]:
             return []
 
         replace_side = "right" if keep_side == "left" else "left"
@@ -519,12 +539,21 @@ class Trial:
         kept_chest.clickable = False  # Disable clicking on kept chest
         items.append(kept_chest.get_html())
 
-        PWH_object = PrizeWithHook(prize=Coin, side=replace_side)
+        # declaring the new prize
+        prize_obj = FilledBag(
+            name=f"hooked_prize_{replace_side}",
+            side=replace_side,
+            open=False,
+            clickable=False,
+            num_coins=self.trial_info["stage_2"]["prize_coins"],
+        )
+
+        PWH_object = PrizeWithHook(prize=prize_obj, side=replace_side)
 
         if replace_side == "left":
-            self.left = PWH_object.prize
+            self.left = prize_obj
         else:
-            self.right = PWH_object.prize
+            self.right = prize_obj
 
         items.append(PWH_object.get_html())
         items.append(chest_with_hook_(side=replace_side))
@@ -537,14 +566,14 @@ class Trial:
         # page 2
         items = []
 
-        onclick_fn = "openChest"
-
         self.left.clickable = True
         self.right.clickable = True
-        if self.left.clickfn_mutable:
-            self.left.onclick_fn = onclick_fn
-        if self.right.clickfn_mutable:
-            self.right.onclick_fn = onclick_fn
+
+        # changing the chest onclick function to open
+        if keep_side == "left":
+            self.left.onclick_fn = "openChest"
+        else:
+            self.right.onclick_fn = "openChest"
 
         items.extend([self.left.get_html(), self.right.get_html()])
 
@@ -572,8 +601,12 @@ def experiment(uid):
     trial_num = 0
     for trial_num in range(1):
         print("Starting trial num: ", trial_num + 1)
+        trial_info = {
+            "stage_1": {"include": True, "prize_coins": 4},
+            "stage_2": {"include": True, "prize_coins": 4},
+        }
 
-        trial = Trial(occluded=True, two_stage=True, prize_class=Coin)
+        trial = Trial(trial_info=trial_info, occluded=True)
 
         all_pages = trial.get_stage1().copy()  # Get all pages for stage 1
         page_ind = 0
@@ -595,8 +628,11 @@ def experiment(uid):
                     print("Chosen side:", chosen_side)
 
                     # After choice, add stage 2 pages
-                    stage2_pages = trial.get_stage2(keep_side=chosen_side[0])
-                    all_pages.extend(stage2_pages)
+                    if trial_info["stage_2"]["include"]:
+                        stage2_pages = trial.get_stage2(
+                            keep_side=chosen_side[0]
+                        )
+                        all_pages.extend(stage2_pages)
 
                     trial_data["Stage 1 Choice"] = response
                 else:

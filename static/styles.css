@@ -138,6 +138,10 @@ body {
     /* TODO: CHANGE LATER back to 1 */
 }
 
+.prize_bag {
+    z-index: 2;
+}
+
 .hook {
     position: absolute;
     z-index: 10;
@@ -237,7 +241,7 @@ TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
 
 /* Occluder animations */
 .occluder-place-reset {
-    top: -70vh !important;
+    top: -80vh !important;
 }
 
 .occluder-place-1 {
