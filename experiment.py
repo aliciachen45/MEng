@@ -3,6 +3,8 @@ from constants import *
 import random
 from visual import *
 
+SCORE = ScoreDisplay(score=0)
+
 
 def chest_with_hook_(side="left"):
     """
@@ -36,7 +38,7 @@ class Trial:
         # trial_info: {stage 1: {include: True/False, prize_coins: int}, stage 2: {include: True/False, prize_coins: int}}
         self.occluded = occluded
         self.trial_info = trial_info
-        self.prize_side = prize_side
+        self.first_prize_side = prize_side
 
     def get_stage1(self):
 
@@ -50,12 +52,12 @@ class Trial:
         items.append(self.left.get_html())
         items.append(self.right.get_html())
 
-        if not self.prize_side:
-            self.prize_side = random.choice(["left", "right"])
+        if not self.first_prize_side:
+            self.first_prize_side = random.choice(["left", "right"])
 
         prize_bag = FilledBag(
-            name=f"prize_{self.prize_side}",
-            side=self.prize_side,
+            name=f"prize_{self.first_prize_side}",
+            side=self.first_prize_side,
             open=True,
             num_coins=self.trial_info["stage_1"]["prize_coins"],
         )
@@ -73,7 +75,9 @@ class Trial:
             )
 
             items.extend([flag_left, flag_right])
+
         items.append(div_(id="stage_indicator")(1))
+        items.append(SCORE.get_html())
 
         animation_page = div_(style="display: flex;")(*items)
         pages.append(animation_page)
@@ -97,7 +101,7 @@ class Trial:
         # assigning prize to chest
 
         prize_bag.open = False
-        if self.prize_side == "left":
+        if self.first_prize_side == "left":
             self.left.prize = prize_bag
         else:
             self.right.prize = prize_bag
@@ -111,6 +115,7 @@ class Trial:
             name="clicked_side",  # name for the server log
         )
         items.append(hidden_input)
+        items.append(SCORE.get_html())
 
         choice_page = div_(style="display: flex;")(*items)
 
@@ -154,6 +159,7 @@ class Trial:
         items.append(chest_with_hook_(side=replace_side))
 
         items.append(div_(id="stage_indicator")(2))
+        items.append(SCORE.get_html())
 
         animation_page = div_(style="display: flex;")(*items)
         pages.append(animation_page)
@@ -179,6 +185,7 @@ class Trial:
             name="clicked_side",  # name for the server log
         )
         items.append(hidden_input)
+        items.append(SCORE.get_html())
 
         choice_page = div_(style="display: flex;")(*items)
 
@@ -189,16 +196,16 @@ class Trial:
 
 @kesar
 def experiment(uid):
+
     data = {}
-    animals = ["cat", "dog", "beaver"]
 
     # trial_pages = [coin]
-    trial_num = 0
-    for trial_num in range(1):
+    trial_num = 3
+    for trial_num in range(trial_num):
         print("Starting trial num: ", trial_num + 1)
         trial_info = {
-            "stage_1": {"include": True, "prize_coins": 4},
-            "stage_2": {"include": False, "prize_coins": 4},
+            "stage_1": {"include": True, "prize_coins": 2},
+            "stage_2": {"include": False, "prize_coins": 2},
         }
 
         trial = Trial(trial_info=trial_info, occluded=True)
@@ -208,7 +215,7 @@ def experiment(uid):
 
         trial_data = {
             "trial_number": trial_num + 1,
-            "prize_side": trial.prize_side,
+            "prize_side": trial.first_prize_side,
         }
 
         while page_ind < len(all_pages):
@@ -228,10 +235,21 @@ def experiment(uid):
                             keep_side=chosen_side[0]
                         )
                         all_pages.extend(stage2_pages)
+                    else:
+                        # If only stage 1, assign score
+                        if chosen_side[0] == trial.first_prize_side:
+                            SCORE.score += trial_info["stage_1"]["prize_coins"]
 
                     trial_data["Stage 1 Choice"] = response
                 else:
                     trial_data["Stage 2 Choice"] = response
+
+                    # if stage 2 choice is not the original prize side, add stage 2 coins
+                    if chosen_side[0] != trial.first_prize_side:
+                        SCORE.score += trial_info["stage_2"]["prize_coins"]
+                    else:
+                        SCORE.score += trial_info["stage_1"]["prize_coins"]
+
             page_ind += 1
         data[trial_num + 1] = trial_data
 

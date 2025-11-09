@@ -50,7 +50,8 @@ function placeCoinsInBag(prize_place_positions) {
 
 
 function openChest(object) {
-    // blocker.classList.remove('hidden');
+    showOverlay();
+
     const children = object.children;
 
     let choice = "unknown";
@@ -94,18 +95,18 @@ function openChest(object) {
     console.log("Playing audio");
     audio.play();
 
-    // window.setTimeout(function () {
-    //     SUBMITTING = true;
-    //     document.querySelector('form').submit("hi");
-    // }, 5000);
-    // blocker.classList.add('hidden');
-
+    window.setTimeout(function () {
+        SUBMITTING = true;
+        document.querySelector('form').submit("hi");
+    }, 7000);
 }
 
 function revealCoinsAndBag(bagContainerObj) {
     console.log("Revealing coin from bag:", bagContainerObj);
     const staggerDelayMs = 300;
     const bagContainerChildren = bagContainerObj.children
+    const score_display = document.getElementById('score_display');
+
     let prizeBag = null;
     let prizeCoins = [];
 
@@ -116,14 +117,13 @@ function revealCoinsAndBag(bagContainerObj) {
             prizeCoins.push(child);
         }
     }
-
+    var num_coins = prizeCoins.length;
 
     console.log("Found prize bag:", prizeBag);
     console.log("Found prize coins:", prizeCoins);
 
 
 
-    // TODO: Change this later to match the correct reveal animations
 
     // 1. Bring bag up
 
@@ -138,13 +138,60 @@ function revealCoinsAndBag(bagContainerObj) {
     setTimeout(() => {
         prizeBag.src = "/images/open_bag.png";
 
+
         setTimeout(() => {
-            // 3. Reveal coins one by one, starting with the highest coin (last in list)
-            for (let i = prizeCoins.length - 1; i >= 0; i--) {
-                setTimeout(() => {
-                    prizeCoins[i].classList.add('prize_reveal_animation');
-                }, (prizeCoins.length - 1 - i) * staggerDelayMs);
+            let coinsFinalY = `calc(${prizeBag.style.top} - ${prizeBag.style.height}/3)`;
+            let coinsFinalX = []
+
+            console.log("Final Y for coin reveal:", coinsFinalY);
+            // TODO: Change this later to match the correct reveal animations
+            if (num_coins == 1) {
+                coinsFinalX.push(`calc(${prizeBag.style.left} + ${prizeBag.style.width}/2) - ${prizeCoins[0].style.width}/2)`);
+            } else if (num_coins == 2) {
+                // i = 0 coin starts left, goes left
+                coinsFinalX.push(`calc(${prizeBag.style.left} + ${prizeBag.style.width}/3) - ${prizeCoins[0].style.width}/2)`);
+                coinsFinalX.push(`calc(${prizeBag.style.left} + ${prizeBag.style.width}*2/3) - ${prizeCoins[1].style.width}/2)`);
+                coin_order = [0, 1];
+                coin_delay = [0, 1];
+            } else if (num_coins == 4) {
+                // i = 0 coin starts bottom center, goes right
+                // i = 1 coin starts left mid, goes mid left
+                // i = 2 coin starts right mid, goes mid right
+                // i = 3 coin starts top center, goes left
+                let prize_bag_left = prizeBag.style.left;
+                let prize_bag_width = prizeBag.style.width;
+                let prize_coin_width = prizeCoins[0].style.width;
+                coinsFinalX.push(`calc(${prize_bag_left} + ${prize_bag_width} - ${prize_coin_width}/2)`);
+                coinsFinalX.push(`calc(${prize_bag_left} + ${prize_bag_width}/3 - ${prize_coin_width}/2)`);
+                coinsFinalX.push(`calc(${prize_bag_left} + ${prize_bag_width}*2/3 - ${prize_coin_width}/2)`);
+                coinsFinalX.push(`calc(${prize_bag_left} - ${prize_coin_width}/2)`);
+                coin_order = [3, 1, 2, 0];
+                coin_delay = [0, 1, 2, 3];
+            } else {
+                error("Fatal: Unsupported number of coins for reveal:", num_coins);
             }
+            console.log("Final X positions for coin reveal:", coinsFinalX);
+            // 3. Reveal coins one by one, starting with the highest coin (last in list)
+
+            for (let i = 0; i < coin_order.length; i++) {
+                setTimeout(() => {
+                    coin = coin_order[i];
+                    prizeCoins[coin].style.top = coinsFinalY;
+                    prizeCoins[coin].style.left = coinsFinalX[coin];
+
+                    // Update score display
+                    score_display.innerText = (parseInt(score_display.innerText) + 1).toString();
+                }, coin_delay[i] * staggerDelayMs);
+            }
+
+            // Add bounce animation to bag after coins revealed
+            for (let i = 0; i < coin_order.length; i++) {
+                setTimeout(() => {
+                    prizeCoins[coin_order[i]].classList.add('bounce_animation');
+                }, (num_coins - 1) * staggerDelayMs + 1000 + i * staggerDelayMs / 2);
+            }
+
+            // Add animation for spiral into score
         }, 500);
     }, 1200);
 
@@ -153,6 +200,7 @@ function revealCoinsAndBag(bagContainerObj) {
 
 
 function selectChest(object) {
+    showOverlay();
     console.log("Selecting object:", object);
     var audio = new Audio("../audio/pop.mp3");
     audio.play();
@@ -493,3 +541,26 @@ document.addEventListener('DOMContentLoaded', () => {
 //         }
 //     });
 // }
+
+
+function showOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'processing-overlay';
+    Object.assign(overlay.style, {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.1)', // Slightly visible for feedback (TODO: REMOVE)
+        zIndex: 9999
+    });
+    document.body.appendChild(overlay);
+}
+
+function hideOverlay() {
+    const overlay = document.getElementById('processing-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+}

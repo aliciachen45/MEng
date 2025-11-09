@@ -2,6 +2,18 @@ from kesar import *
 from constants import *
 
 
+class ScoreDisplay:
+    def __init__(self, name="score_display", score=0):
+        self.name = name
+        self.score = score
+
+    def get_html(self):
+        return div_(
+            id=self.name,
+            class_=f"score_display",
+        )(f"{self.score}")
+
+
 class Object:
     def __init__(self, name="", clickable=False):
         self.name = name
