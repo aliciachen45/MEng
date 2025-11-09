@@ -239,7 +239,6 @@ def page(uid, *contents, **kwargs):
         #     src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/MotionPathPlugin.min.js"
         # )(),
         script_()(static_("static/script.js")),
-        # div_(id="click_blocker", class_="hidden", style="display:none;")(),
     )
 
 

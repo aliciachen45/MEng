@@ -1,5 +1,24 @@
 // static/script.js
 // const blocker = document.getElementById('click-blocker');
+
+
+
+
+// import { gsap } from "gsap";
+// import { MotionPathPlugin } from "gsap/MotionPathPlugin";
+const PLAY_AUDIO = false;
+// function initializeGSAP() {
+//     // Check if the global object exists before using it
+//     if (typeof gsap !== 'undefined' && typeof MotionPathPlugin !== 'undefined') {
+//         gsap.registerPlugin(MotionPathPlugin);
+//         console.log("GSAP and MotionPathPlugin registered successfully.");
+//         return true;
+//     }
+//     console.error("GSAP or MotionPathPlugin not yet defined.");
+//     return false;
+// }
+function initializeGSAP() { return true; }
+
 function recordChoice(choice) {
     const hiddenInput = document.getElementById('choice_input');
     if (hiddenInput) {
@@ -43,7 +62,6 @@ function placeCoinsInBag(prize_place_positions) {
         setTimeout(() => {
             coins[i].classList.remove(prize_place_positions[0]);
             coins[i].classList.add(prize_place_positions[1]);
-            console.log("Moving coin:", coins[i]);
         }, i * staggerDelayMs);
     }
 }
@@ -59,7 +77,6 @@ function openChest(object) {
     let chest_top = null;
 
     for (var child of children) {
-        console.log("Child found:", child);
         if (child.id.includes('chest_top_image')) {
             chest_top = child;
         } else if (child.classList.contains('bag_container')) {
@@ -103,6 +120,7 @@ function openChest(object) {
 
 function revealCoinsAndBag(bagContainerObj) {
     console.log("Revealing coin from bag:", bagContainerObj);
+    showOverlay();
     const staggerDelayMs = 300;
     const bagContainerChildren = bagContainerObj.children
     const score_display = document.getElementById('score_display');
@@ -122,9 +140,6 @@ function revealCoinsAndBag(bagContainerObj) {
     console.log("Found prize bag:", prizeBag);
     console.log("Found prize coins:", prizeCoins);
 
-
-
-
     // 1. Bring bag up
 
     delta_y = `calc(${prizeBag.style.height} * 2/3)`;
@@ -139,10 +154,11 @@ function revealCoinsAndBag(bagContainerObj) {
         prizeBag.src = "/images/open_bag.png";
         var audio = new Audio("../audio/fanfare.wav");
         console.log("Playing audio");
-        setTimeout(() => {
-            audio.play()
-        }, 400);
-
+        if (PLAY_AUDIO) {
+            audio.play().catch((error) => {
+                console.error("Audio playback failed:", error);
+            });
+        }
 
         setTimeout(() => {
             let coinsFinalY = `calc(${prizeBag.style.top} - ${prizeBag.style.height}/3)`;
@@ -197,12 +213,19 @@ function revealCoinsAndBag(bagContainerObj) {
             }
 
             // Add animation for spiral into score
+
+            // for (let i = 0; i < coin_order.length; i++) {
+            //     setTimeout(() => {
+            //         prizeCoins[coin_order[i]].classList.remove('bounce_animation');
+
+            //         prizeCoins[coin_order[i]].classList.add('prize_reveal_animation');
+            //         console.log("Spiraling coin into score:", prizeCoins[coin_order[i]]);
+            //     }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 1500 + i * 1000);
+
+            // }
         }, 500);
     }, 1200);
-
-
 }
-
 
 function selectChest(object) {
     showOverlay();
@@ -262,7 +285,6 @@ function stage_1_animation() {
     }
 
     const chest_top = document.getElementsByClassName('chest_top_image');
-    console.log("Found chest tops for animation:", chest_top);
 
     let prize_side = "left";
     if (bag_container[0].id.includes('right')) {
@@ -365,9 +387,11 @@ function stage_1_animation() {
                                     // Audio will not play unless a user interacts with the screen. Perhaps, add a "Click to Start" screen before starting the experiment.
                                     var audio = new Audio("../audio/open_chest_creak.mp3");
                                     console.log("Playing audio");
-                                    audio.play().catch((error) => {
-                                        console.error("Audio playback failed:", error);
-                                    });
+                                    if (PLAY_AUDIO) {
+                                        audio.play().catch((error) => {
+                                            console.error("Audio playback failed:", error);
+                                        });
+                                    }
 
                                     // // /* PPlay the relevant audio */
                                     // var audio = new Audio("../audio/open_chest.mp3");
@@ -401,7 +425,7 @@ function stage_1_animation() {
                                                 document.querySelector('form').submit();
                                             }, 2000);
                                         }, occluder_timeout);
-                                    }, 500);
+                                    }, 1200);
 
                                 }, 1200);
 
@@ -518,13 +542,23 @@ function stage_2_animation() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // stage_1_animation();
-    stage = document.getElementById('stage_indicator').innerText;
-    console.log("Current stage:", stage);
+    if (initializeGSAP()) {
+        let stage = document.getElementById('stage_indicator').innerText;
+        console.log("Current stage:", stage);
 
-    if (stage == '1') {
-        stage_1_animation();
-    } else if (stage == '2') {
-        stage_2_animation();
+        if (stage == '1') {
+            stage_1_animation();
+        } else if (stage == '2') {
+            stage_2_animation();
+        }
+    } else {
+        setTimeout(() => {
+            if (initializeGSAP()) {
+                runExperimentLogic();
+            } else {
+                console.error("GSAP initialization failed after delay. Animation will not run.");
+            }
+        }, 500);
     }
 
     // have a tag for each of the stages
@@ -568,11 +602,4 @@ function showOverlay() {
         zIndex: 9999
     });
     document.body.appendChild(overlay);
-}
-
-function hideOverlay() {
-    const overlay = document.getElementById('processing-overlay');
-    if (overlay) {
-        overlay.remove();
-    }
 }

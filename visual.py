@@ -182,7 +182,7 @@ class Bag(Prize):
         super().__init__(name=name, clickable=clickable, prize_info=BAG_INFO)
         self.side = side
         self.open = open
-        self.onclick_fn = "revealCoinsFromBag"
+        self.onclick_fn = "revealCoinsAndBag"
         self.x = (
             LEFT_BAG_POSITION_X if self.side == "left" else RIGHT_BAG_POSITION_X
         )

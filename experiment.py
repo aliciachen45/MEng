@@ -34,11 +34,12 @@ Training types: 2 chest,
 
 
 class Trial:
-    def __init__(self, trial_info, occluded="partial", prize_side=None):
+    def __init__(self, trial_info, occluded="", prize_side=None):
         # trial_info: {stage 1: {include: True/False, prize_coins: int}, stage 2: {include: True/False, prize_coins: int}}
         self.occluded = occluded
         self.trial_info = trial_info
         self.first_prize_side = prize_side
+        self.num_stages = 2 if trial_info["stage_2"]["include"] else 1
 
     def get_stage1(self):
 
@@ -194,28 +195,71 @@ class Trial:
         return pages
 
 
+class OneStageTrainingTrial(Trial):
+    def __init__(self, stage1_coins, occluded="", prize_side=None):
+        trial_info = {
+            "stage_1": {
+                "include": True,
+                "prize_coins": stage1_coins,
+            },
+            "stage_2": {
+                "include": False,
+                "prize_coins": 0,
+            },
+        }
+        super().__init__(trial_info, occluded=occluded, prize_side=prize_side)
+
+
+class TwoStageTrainingTrial(Trial):
+    def __init__(
+        self, stage1_coins, stage2_coins, occluded="", prize_side=None
+    ):
+        trial_info = {
+            "stage_1": {
+                "include": True,
+                "prize_coins": stage1_coins,
+            },
+            "stage_2": {
+                "include": True,
+                "prize_coins": stage2_coins,
+            },
+        }
+        super().__init__(trial_info, occluded=occluded, prize_side=prize_side)
+
+
+class TestingTrial(Trial):
+    def __init__(self, stage1_coins, stage2_coins, prize_side=None):
+        trial_info = {
+            "stage_1": {
+                "include": True,
+                "prize_coins": stage1_coins,
+            },
+            "stage_2": {
+                "include": True,
+                "prize_coins": stage2_coins,
+            },
+        }
+        super().__init__(trial_info, occluded="full", prize_side=prize_side)
+
+
 @kesar
 def experiment(uid):
 
     data = {}
 
     # trial_pages = [coin]
-    trial_num = 3
-    for trial_num in range(trial_num):
+
+    trials = [
+        # OneStageTrainingTrial(stage1_coins=4),
+        # OneStageTrainingTrial(stage1_coins=2, occluded="partial"),
+        # TwoStageTrainingTrial(
+        #     stage1_coins=2, stage2_coins=4, occluded="partial"
+        # ),
+        TestingTrial(stage1_coins=2, stage2_coins=4),
+    ]
+    for trial_num in range(len(trials)):
         print("Starting trial num: ", trial_num + 1)
-        trial_info = {
-            "stage_1": {
-                "include": True,
-                "prize_coins": 2,
-            },
-            "stage_2": {
-                "include": False,
-                "prize_coins": 2,
-            },
-        }
-
-        trial = Trial(trial_info=trial_info, occluded="partial")
-
+        trial = trials[trial_num]
         all_pages = trial.get_stage1().copy()  # Get all pages for stage 1
         page_ind = 0
 
@@ -236,7 +280,7 @@ def experiment(uid):
                     print("Chosen side:", chosen_side)
 
                     # After choice, add stage 2 pages
-                    if trial_info["stage_2"]["include"]:
+                    if trial.num_stages == 2:
                         stage2_pages = trial.get_stage2(
                             keep_side=chosen_side[0]
                         )
@@ -244,7 +288,9 @@ def experiment(uid):
                     else:
                         # If only stage 1, assign score
                         if chosen_side[0] == trial.first_prize_side:
-                            SCORE.score += trial_info["stage_1"]["prize_coins"]
+                            SCORE.score += trial.trial_info["stage_1"][
+                                "prize_coins"
+                            ]
 
                     trial_data["Stage 1 Choice"] = response
                 else:
@@ -252,11 +298,19 @@ def experiment(uid):
 
                     # if stage 2 choice is not the original prize side, add stage 2 coins
                     if chosen_side[0] != trial.first_prize_side:
-                        SCORE.score += trial_info["stage_2"]["prize_coins"]
+                        SCORE.score += trial.trial_info["stage_2"][
+                            "prize_coins"
+                        ]
                     else:
-                        SCORE.score += trial_info["stage_1"]["prize_coins"]
+                        SCORE.score += trial.trial_info["stage_1"][
+                            "prize_coins"
+                        ]
 
             page_ind += 1
         data[trial_num + 1] = trial_data
 
     return data  # to be logged
+
+
+# // <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+# // <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/MotionPathPlugin.min.js"></script>

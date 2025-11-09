@@ -11,20 +11,18 @@ body {
 /* 1. Define the animation keyframes */
 @keyframes prize_reveal {
     0% {
-        transform: rotateY(0deg);
+        transform: translateY(0) (0deg);
     }
 
-    20% {
-        transform: translateY(-30vh);
+    30% {
+        transform: rotateY(180deg);
     }
 
     60% {
-        transform: translateY(-30vh) rotateY(360deg);
+        transform: rotateY(720deg);
     }
 
-    100% {
-        transform: translateY(-30vh) rotateY(720deg);
-    }
+
 }
 
 @keyframes bounce {
@@ -256,7 +254,7 @@ TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
     /* left: 47vw !important;
     top: 50vh !important; */
     visibility: visible;
-    transform: translateX(25vw) !important;
+    transform: translateY(-10vh) translateX(25vw) !important;
 }
 
 .prize-place-right-reset {
@@ -281,7 +279,7 @@ TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
     /* left: 47vw !important;
     top: 50vh !important; */
     visibility: visible;
-    transform: translateX(-25vw) !important;
+    transform: translateY(-10vh) translateX(-25vw) !important;
 }
 
 
