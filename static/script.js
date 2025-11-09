@@ -137,6 +137,11 @@ function revealCoinsAndBag(bagContainerObj) {
     // 2. Open bag 
     setTimeout(() => {
         prizeBag.src = "/images/open_bag.png";
+        var audio = new Audio("../audio/fanfare.wav");
+        console.log("Playing audio");
+        setTimeout(() => {
+            audio.play()
+        }, 400);
 
 
         setTimeout(() => {
@@ -235,6 +240,7 @@ function selectChest(object) {
 function stage_1_animation() {
     /* Getting coin element */
     var prizes = document.getElementsByClassName('prize');
+
     console.log("Found prize elements:", prizes);
     if (prizes.length === 0) {
         console.log("No prize element found for animation.");
@@ -356,6 +362,12 @@ function stage_1_animation() {
                                     }
                                     // new Audio("../audio/coin_placement.wav").play();
 
+                                    // Audio will not play unless a user interacts with the screen. Perhaps, add a "Click to Start" screen before starting the experiment.
+                                    var audio = new Audio("../audio/open_chest_creak.mp3");
+                                    console.log("Playing audio");
+                                    audio.play().catch((error) => {
+                                        console.error("Audio playback failed:", error);
+                                    });
 
                                     // // /* PPlay the relevant audio */
                                     // var audio = new Audio("../audio/open_chest.mp3");

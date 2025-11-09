@@ -34,7 +34,7 @@ Training types: 2 chest,
 
 
 class Trial:
-    def __init__(self, trial_info, occluded=False, prize_side=None):
+    def __init__(self, trial_info, occluded="partial", prize_side=None):
         # trial_info: {stage 1: {include: True/False, prize_coins: int}, stage 2: {include: True/False, prize_coins: int}}
         self.occluded = occluded
         self.trial_info = trial_info
@@ -67,12 +67,12 @@ class Trial:
 
         # add occluder:
         if self.occluded:
-            flag_left = Flag(name="initial_occluder", side="left").get_html(
-                additional_class="hidden"
-            )
-            flag_right = Flag(name="initial_occluder", side="right").get_html(
-                additional_class="hidden"
-            )
+            flag_left = Occluder(
+                name="initial_occluder", side="left", type=self.occluded
+            ).get_html(additional_class="hidden")
+            flag_right = Occluder(
+                name="initial_occluder", side="right", type=self.occluded
+            ).get_html(additional_class="hidden")
 
             items.extend([flag_left, flag_right])
 
@@ -204,11 +204,17 @@ def experiment(uid):
     for trial_num in range(trial_num):
         print("Starting trial num: ", trial_num + 1)
         trial_info = {
-            "stage_1": {"include": True, "prize_coins": 2},
-            "stage_2": {"include": False, "prize_coins": 2},
+            "stage_1": {
+                "include": True,
+                "prize_coins": 2,
+            },
+            "stage_2": {
+                "include": False,
+                "prize_coins": 2,
+            },
         }
 
-        trial = Trial(trial_info=trial_info, occluded=True)
+        trial = Trial(trial_info=trial_info, occluded="partial")
 
         all_pages = trial.get_stage1().copy()  # Get all pages for stage 1
         page_ind = 0

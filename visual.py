@@ -150,18 +150,23 @@ class Hook(Object):
         return hook
 
 
-class Flag(Object):
-    def __init__(self, name="", side="left"):
+class Occluder(Object):
+    def __init__(self, name="", side="left", type="partial"):
         super().__init__(name=name)
         self.side = side
+        self.type = type
+        self.occluder_info = (
+            PARTIAL_OCCLUDER_INFO if type == "partial" else FULL_OCCLUDER_INFO
+        )
 
     def get_html(self, additional_style="", additional_class=""):
+        print("Occluder types", self.type)
         flag = img_(
             id=self.name,
             class_=f"occluder {additional_class}",
-            src="images/pirate_flag.png",
-            alt="Flag",
-            style=f"width: {DEFAULT_FLAG_WIDTH}; height: {DEFAULT_FLAG_HEIGHT}; position: absolute; left: {LEFT_FLAG_POSITION_X if self.side == 'left' else RIGHT_FLAG_POSITION_X}; top: {FLAG_POSITION_Y}; {additional_style}",
+            src=f"images/{self.type}_occluder.png",
+            alt=f"{self.type.capitalize()} Occluder",
+            style=f"width: {self.occluder_info['width']}; height: {self.occluder_info['height']}; position: absolute; left: {self.occluder_info['left_x'] if self.side == 'left' else self.occluder_info['right_x']}; top: {self.occluder_info['y']}; {additional_style}",
         )
         return flag
 
