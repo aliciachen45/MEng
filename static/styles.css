@@ -10,18 +10,13 @@ body {
 
 /* 1. Define the animation keyframes */
 @keyframes prize_reveal {
-    0% {
-        transform: translateY(0) (0deg);
-    }
-
-    30% {
+    25% {
         transform: rotateY(180deg);
     }
 
-    60% {
-        transform: rotateY(720deg);
+    100% {
+        transform: rotateY(990deg);
     }
-
 
 }
 
@@ -312,8 +307,7 @@ TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
 Keyframe animations
 */
 .prize_reveal_animation {
-    transform: translateY(-30vh);
-    animation: prize_reveal 2.5s ease-in-out forwards;
+    animation: prize_reveal 1.5s linear forwards;
     /* z-index: 4; */
 }
 

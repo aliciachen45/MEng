@@ -112,10 +112,10 @@ function openChest(object) {
     console.log("Playing audio");
     audio.play();
 
-    window.setTimeout(function () {
-        SUBMITTING = true;
-        document.querySelector('form').submit("hi");
-    }, 7000);
+    // window.setTimeout(function () {
+    //     SUBMITTING = true;
+    //     document.querySelector('form').submit("hi");
+    // }, 7000);
 }
 
 function revealCoinsAndBag(bagContainerObj) {
@@ -200,8 +200,6 @@ function revealCoinsAndBag(bagContainerObj) {
                     prizeCoins[coin].style.top = coinsFinalY;
                     prizeCoins[coin].style.left = coinsFinalX[coin];
 
-                    // Update score display
-                    score_display.innerText = (parseInt(score_display.innerText) + 1).toString();
                 }, coin_delay[i] * staggerDelayMs);
             }
 
@@ -214,14 +212,17 @@ function revealCoinsAndBag(bagContainerObj) {
 
             // Add animation for spiral into score
 
-            // for (let i = 0; i < coin_order.length; i++) {
-            //     setTimeout(() => {
-            //         prizeCoins[coin_order[i]].classList.remove('bounce_animation');
-
-            //         prizeCoins[coin_order[i]].classList.add('prize_reveal_animation');
-            //         console.log("Spiraling coin into score:", prizeCoins[coin_order[i]]);
-            //     }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 1500 + i * 1000);
-
+            for (let i = 0; i < coin_order.length; i++) {
+                setTimeout(() => {
+                    prizeCoins[coin_order[i]].classList.remove('bounce_animation');
+                    prizeCoins[coin_order[i]].classList.add("prize_reveal_animation");
+                    setTimeout(() => {
+                        prizeCoins[coin_order[i]].classList.remove("prize_reveal_animation");
+                        startArcAnimation(prizeCoins[coin_order[i]])
+                        console.log("Spiraling coin into score:", prizeCoins[coin_order[i]]);
+                    }, 900);
+                }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 1500 + i * 1000);
+            }
             // }
         }, 500);
     }, 1200);
@@ -566,27 +567,71 @@ document.addEventListener('DOMContentLoaded', () => {
     // startSpiralAnimation();
 });
 
+function startArcAnimation(object) {
 
-// function startSpiralAnimation() {
-//     // console.log("Initializing GSAP spiral animation");
-//     gsap.registerPlugin(MotionPathPlugin);
-//     console.log("Starting spiral animation");
+    const score_display = document.getElementById('score_display');
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-//     gsap.to("#dot", {
-//         // Standard tween properties
-//         duration: 15,          // The time it takes to complete one loop
-//         repeat: -1,            // Loop infinitely
-//         ease: "none",          // Linear speed for a smooth spiral motion
+    // --- 1. Get Start and End Points ---
+    const startX = object.style.left; // Assume VW/VH unit is intended
+    const startY = object.style.top;
 
-//         // MotionPathPlugin Configuration
-//         motionPath: {
-//             path: "#spiralPath", // Reference the ID of the SVG path
-//             align: "#spiralPath",// Align the object's center to the path 
-//             alignOrigin: [0.5, 0.5], // Center the object precisely on the path
-//             autoRotate: true     // Automatically rotate the dot to face the direction of the path
-//         }
-//     });
-// }
+    const endRect = score_display.getBoundingClientRect();
+    const endX = (endRect.left / viewportWidth) * 100;
+    const endY = (endRect.top / viewportHeight) * 100;
+
+    // --- 2. Calculate Total Translation (Delta) in VW/VH Numbers ---
+    const deltaX_num = `calc(${endX}vw - ${startX})`;
+    const deltaY_num = `calc(${endY}vh - ${startY})`;
+
+    // --- 3. Define Arc Bulge ---
+    const totalBulgeVH = `calc(${deltaY_num} * -0.4)`; // increase as travel length increases
+    console.log("Total Bulge (VH):", totalBulgeVH);
+
+    // --- 4. Keyframe Generation Loop ---
+    const keyframes = [];
+
+    // Helper function for a parabola: f(t) = 4 * t * (1 - t)
+    // This gives a value of 0 at t=0 and t=1, and a max height of 1 at t=0.5.
+    const parabolicFactor = (t) => 4 * t * (1 - t);
+
+    for (let i = 0; i <= 100; i += 5) {
+        const t = i / 100; // time factor from 0.0 to 1.0
+
+        // Apply the bulge factor weighted by the parabolic function
+        const bulgeDisplacement = `calc(${totalBulgeVH} * ${parabolicFactor(t)})`;
+
+        // FINAL TRANSFORM VALUES (Numbers)
+        const finalX = `calc(${deltaX_num} * ${t})`;
+        const finalY = `calc(${deltaY_num} * ${t} + ${bulgeDisplacement})`;
+
+
+        const transformX = finalX; // Placeholder to keep the calc structure simple
+        const transformY = finalY;
+        keyframes.push({
+            offset: t,
+            transform: `translate(${transformX}, ${transformY})`
+        });
+    }
+
+    // --- 5. Define Animation Options ---
+    const options = {
+        duration: 500, // Longer duration for better visual smoothness
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', // Still linear for constant speed
+        fill: 'forwards'
+    };
+
+    object.animate(keyframes, options);
+
+    // --- 6. Run the Animation ---
+    setTimeout(() => {
+        object.classList.add('hidden');
+        score_display.innerText = (parseInt(score_display.innerText) + 1).toString();
+
+    }, options.duration);
+}
+
 
 
 function showOverlay() {
@@ -603,3 +648,4 @@ function showOverlay() {
     });
     document.body.appendChild(overlay);
 }
+

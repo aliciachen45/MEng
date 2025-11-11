@@ -250,12 +250,12 @@ def experiment(uid):
     # trial_pages = [coin]
 
     trials = [
-        # OneStageTrainingTrial(stage1_coins=4),
+        OneStageTrainingTrial(stage1_coins=4),
         # OneStageTrainingTrial(stage1_coins=2, occluded="partial"),
         # TwoStageTrainingTrial(
         #     stage1_coins=2, stage2_coins=4, occluded="partial"
         # ),
-        TestingTrial(stage1_coins=2, stage2_coins=4),
+        # TestingTrial(stage1_coins=2, stage2_coins=4),
     ]
     for trial_num in range(len(trials)):
         print("Starting trial num: ", trial_num + 1)
