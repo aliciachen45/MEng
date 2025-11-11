@@ -609,9 +609,11 @@ function startArcAnimation(object) {
 
         const transformX = finalX; // Placeholder to keep the calc structure simple
         const transformY = finalY;
+
+        var size = 1 - Math.max(i - 70, 0) * 1 / 30; // Start scaling down after 70% of the animation
         keyframes.push({
             offset: t,
-            transform: `translate(${transformX}, ${transformY})`
+            transform: `translate(${transformX}, ${transformY}) scale(${size})`, // Scale down to 30% size
         });
     }
 
