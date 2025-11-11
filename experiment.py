@@ -242,21 +242,31 @@ class TestingTrial(Trial):
         super().__init__(trial_info, occluded="full", prize_side=prize_side)
 
 
+def start_page():
+    return div_(id="start_page")(
+        button_(id="start_button", onClick="startExperiment()")(
+            "Click to begin!"
+        ),
+    )
+
+
 @kesar
 def experiment(uid):
 
     data = {}
 
-    # trial_pages = [coin]
-
     trials = [
         OneStageTrainingTrial(stage1_coins=4),
-        # OneStageTrainingTrial(stage1_coins=2, occluded="partial"),
-        # TwoStageTrainingTrial(
-        #     stage1_coins=2, stage2_coins=4, occluded="partial"
-        # ),
-        # TestingTrial(stage1_coins=2, stage2_coins=4),
+        OneStageTrainingTrial(stage1_coins=2, occluded="partial"),
+        TwoStageTrainingTrial(
+            stage1_coins=2, stage2_coins=4, occluded="partial"
+        ),
+        TestingTrial(stage1_coins=2, stage2_coins=4),
     ]
+
+    # Begin
+    yield start_page()
+
     for trial_num in range(len(trials)):
         print("Starting trial num: ", trial_num + 1)
         trial = trials[trial_num]

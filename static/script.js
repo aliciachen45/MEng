@@ -6,7 +6,7 @@
 
 // import { gsap } from "gsap";
 // import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-const PLAY_AUDIO = false;
+const PLAY_AUDIO = true;
 // function initializeGSAP() {
 //     // Check if the global object exists before using it
 //     if (typeof gsap !== 'undefined' && typeof MotionPathPlugin !== 'undefined') {
@@ -18,6 +18,13 @@ const PLAY_AUDIO = false;
 //     return false;
 // }
 function initializeGSAP() { return true; }
+
+function startExperiment() {
+    window.setTimeout(function () {
+        SUBMITTING = true;
+        document.querySelector('form').submit("hi");
+    }, 300);
+}
 
 function recordChoice(choice) {
     const hiddenInput = document.getElementById('choice_input');
@@ -57,11 +64,13 @@ function placeCoinsInBag(prize_place_positions) {
         }
     }
 
-
     for (let i = 0; i < coins.length; i++) {
         setTimeout(() => {
             coins[i].classList.remove(prize_place_positions[0]);
             coins[i].classList.add(prize_place_positions[1]);
+            setTimeout(() => {
+                new Audio("../audio/drop_coin.mp3").play();
+            }, 700);
         }, i * staggerDelayMs);
     }
 }
@@ -102,7 +111,7 @@ function openChest(object) {
     if (prize_bag_container != null) {
         console.log("Prize has been found !")
         setTimeout(() => {
-            revealCoinsAndBag(prize_bag_container);
+            revealCoinsAndBag(prize_bag_container, submit = false);
         }, 2000); // reveal prize after chest opens
     } else {
         console.log("No prize for this chest")
@@ -112,16 +121,16 @@ function openChest(object) {
     console.log("Playing audio");
     audio.play();
 
-    // window.setTimeout(function () {
-    //     SUBMITTING = true;
-    //     document.querySelector('form').submit("hi");
-    // }, 7000);
+    window.setTimeout(function () {
+        SUBMITTING = true;
+        document.querySelector('form').submit("hi");
+    }, 10000);
 }
 
-function revealCoinsAndBag(bagContainerObj) {
+function revealCoinsAndBag(bagContainerObj, submit = true) {
     console.log("Revealing coin from bag:", bagContainerObj);
     showOverlay();
-    const staggerDelayMs = 300;
+    const staggerDelayMs = 200;
     const bagContainerChildren = bagContainerObj.children
     const score_display = document.getElementById('score_display');
 
@@ -216,9 +225,10 @@ function revealCoinsAndBag(bagContainerObj) {
                 setTimeout(() => {
                     prizeCoins[coin_order[i]].classList.remove('bounce_animation');
                     prizeCoins[coin_order[i]].classList.add("prize_reveal_animation");
+                    new Audio(`../audio/reward${i + 1}.mp3`).play();
                     setTimeout(() => {
                         prizeCoins[coin_order[i]].classList.remove("prize_reveal_animation");
-                        startArcAnimation(prizeCoins[coin_order[i]])
+                        startArcAnimation(prizeCoins[coin_order[i]]);
                         console.log("Spiraling coin into score:", prizeCoins[coin_order[i]]);
                     }, 900);
                 }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 1500 + i * 1000);
@@ -226,6 +236,13 @@ function revealCoinsAndBag(bagContainerObj) {
             // }
         }, 500);
     }, 1200);
+
+    if (submit) {
+        window.setTimeout(function () {
+            SUBMITTING = true;
+            document.querySelector('form').submit();
+        }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000);
+    }
 }
 
 function selectChest(object) {
@@ -353,6 +370,11 @@ function stage_1_animation() {
                     for (var top of chest_top) {
                         top.classList.add('open_chest_simple_animation');
                     }
+                    if (PLAY_AUDIO) {
+                        new Audio("../audio/open_chest_creak.mp3").play().catch((error) => {
+                            console.error("Audio playback failed:", error);
+                        });
+                    }
 
                     // Introduce occluders, doesn't cover the chest yet
                     setTimeout(() => {
@@ -383,16 +405,14 @@ function stage_1_animation() {
                                     for (var prize of prizes) {
                                         prize.classList.remove(prize_place_positions[2]);
                                     }
-                                    // new Audio("../audio/coin_placement.wav").play();
+                                    setTimeout(() => {
+                                        new Audio("../audio/coin_placement.wav").play();
+
+                                    }, 650);
 
                                     // Audio will not play unless a user interacts with the screen. Perhaps, add a "Click to Start" screen before starting the experiment.
-                                    var audio = new Audio("../audio/open_chest_creak.mp3");
-                                    console.log("Playing audio");
-                                    if (PLAY_AUDIO) {
-                                        audio.play().catch((error) => {
-                                            console.error("Audio playback failed:", error);
-                                        });
-                                    }
+
+
 
                                     // // /* PPlay the relevant audio */
                                     // var audio = new Audio("../audio/open_chest.mp3");
@@ -412,6 +432,11 @@ function stage_1_animation() {
                                             top.classList.remove('open_chest_simple_animation');
                                             top.classList.add('close_chest_simple_animation');
                                         }
+                                        if (PLAY_AUDIO) {
+                                            new Audio("../audio/open_chest_creak.mp3").play().catch((error) => {
+                                                console.error("Audio playback failed:", error);
+                                            });
+                                        }
                                         // Pull occluders up out of screen
                                         setTimeout(() => {
                                             for (var occluder of occluders) {
@@ -426,7 +451,7 @@ function stage_1_animation() {
                                                 document.querySelector('form').submit();
                                             }, 2000);
                                         }, occluder_timeout);
-                                    }, 1200);
+                                    }, 1500);
 
                                 }, 1200);
 
@@ -633,7 +658,6 @@ function startArcAnimation(object) {
 
     }, options.duration);
 }
-
 
 
 function showOverlay() {
