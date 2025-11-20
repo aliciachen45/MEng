@@ -124,7 +124,7 @@ function openChest(object) {
     window.setTimeout(function () {
         SUBMITTING = true;
         document.querySelector('form').submit("hi");
-    }, 10000);
+    }, 12000);
 }
 
 function revealCoinsAndBag(bagContainerObj, submit = true) {
@@ -132,7 +132,6 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
     showOverlay();
     const staggerDelayMs = 200;
     const bagContainerChildren = bagContainerObj.children
-    const score_display = document.getElementById('score_display');
 
     let prizeBag = null;
     let prizeCoins = [];
@@ -377,87 +376,88 @@ function stage_1_animation() {
                     }
 
                     // Introduce occluders, doesn't cover the chest yet
+                    var occluder_timeout = (occluders.length > 0) ? 1800 : 1;
+
                     setTimeout(() => {
                         for (var occluder of occluders) {
                             occluder.classList.remove('occluder-place-reset');
-                            occluder.classList.add('occluder-place-1');
+                            // occluder.classList.add('occluder-place-1');
                         }
 
-                        var occluder_timeout = (occluders.length > 0) ? 1200 : 0;
 
                         // Pull occluders down in front of chest. Removing occluder-place-1 will return occluders to their original position
+                        // setTimeout(() => {
+                        // for (var occluder of occluders) {
+                        //     occluder.classList.remove('occluder-place-1');
+                        // }
+
+                        // Move the coin from center top to center mid
                         setTimeout(() => {
-                            for (var occluder of occluders) {
-                                occluder.classList.remove('occluder-place-1');
+                            for (var prize of prizes) {
+                                prize.classList.remove(prize_place_positions[1]);
+                                prize.classList.add(prize_place_positions[2]);
+
                             }
 
-                            // Move the coin from center top to center mid
+                            // Move from center mid to left or right
                             setTimeout(() => {
+                                /* Removing coin-place-2 will return coin to its original (aka final) position */
                                 for (var prize of prizes) {
-                                    prize.classList.remove(prize_place_positions[1]);
-                                    prize.classList.add(prize_place_positions[2]);
-
+                                    prize.classList.remove(prize_place_positions[2]);
                                 }
-
-                                // Move from center mid to left or right
                                 setTimeout(() => {
-                                    /* Removing coin-place-2 will return coin to its original (aka final) position */
-                                    for (var prize of prizes) {
-                                        prize.classList.remove(prize_place_positions[2]);
+                                    new Audio("../audio/coin_placement.wav").play();
+
+                                }, 650);
+
+                                // Audio will not play unless a user interacts with the screen. Perhaps, add a "Click to Start" screen before starting the experiment.
+
+
+
+                                // // /* PPlay the relevant audio */
+                                // var audio = new Audio("../audio/open_chest.mp3");
+                                // const currentDir = __dirname;
+                                // console.log(currentDir);
+                                // console.log(audio);
+                                // audio.play();
+
+
+                                // And hide the coin after reaching final position
+                                // setTimeout(() => {
+                                //     coin.classList.add('hidden');
+                                // }, 1200);
+
+                                setTimeout(() => {
+                                    for (var top of chest_top) {
+                                        top.classList.remove('open_chest_simple_animation');
+                                        top.classList.add('close_chest_simple_animation');
                                     }
+                                    if (PLAY_AUDIO) {
+                                        new Audio("../audio/open_chest_creak.mp3").play().catch((error) => {
+                                            console.error("Audio playback failed:", error);
+                                        });
+                                    }
+                                    // Pull occluders up out of screen
                                     setTimeout(() => {
-                                        new Audio("../audio/coin_placement.wav").play();
-
-                                    }, 650);
-
-                                    // Audio will not play unless a user interacts with the screen. Perhaps, add a "Click to Start" screen before starting the experiment.
-
-
-
-                                    // // /* PPlay the relevant audio */
-                                    // var audio = new Audio("../audio/open_chest.mp3");
-                                    // const currentDir = __dirname;
-                                    // console.log(currentDir);
-                                    // console.log(audio);
-                                    // audio.play();
-
-
-                                    // And hide the coin after reaching final position
-                                    // setTimeout(() => {
-                                    //     coin.classList.add('hidden');
-                                    // }, 1200);
-
-                                    setTimeout(() => {
-                                        for (var top of chest_top) {
-                                            top.classList.remove('open_chest_simple_animation');
-                                            top.classList.add('close_chest_simple_animation');
+                                        for (var occluder of occluders) {
+                                            occluder.classList.add('occluder-place-reset');
+                                            occluder.style.transition = "all 2s ease-in-out";
                                         }
-                                        if (PLAY_AUDIO) {
-                                            new Audio("../audio/open_chest_creak.mp3").play().catch((error) => {
-                                                console.error("Audio playback failed:", error);
-                                            });
-                                        }
-                                        // Pull occluders up out of screen
-                                        setTimeout(() => {
-                                            for (var occluder of occluders) {
-                                                occluder.classList.add('occluder-place-reset');
-                                                occluder.style.transition = "all 2s ease-in-out";
-                                            }
 
 
-                                            // Submit to kesar
-                                            window.setTimeout(function () {
-                                                SUBMITTING = true; // Kesar global variable
-                                                document.querySelector('form').submit();
-                                            }, 2000);
-                                        }, occluder_timeout);
-                                    }, 1500);
-
+                                        // Submit to kesar
+                                        window.setTimeout(function () {
+                                            SUBMITTING = true; // Kesar global variable
+                                            document.querySelector('form').submit();
+                                        }, 2000);
+                                    }, occluder_timeout);
                                 }, 1200);
 
-                            }, 1200);
+                            }, 1000);
+
                         }, occluder_timeout);
-                    }, 1200);
+                        // }, occluder_timeout);
+                    }, 1000);
                 }, 500);
             }, 2000);
 
@@ -654,7 +654,13 @@ function startArcAnimation(object) {
     // --- 6. Run the Animation ---
     setTimeout(() => {
         object.classList.add('hidden');
-        score_display.innerText = (parseInt(score_display.innerText) + 1).toString();
+        curr_score = parseInt(score_display.innerText);
+        score_display.innerText = (curr_score + 1).toString();
+        setMeterValue((curr_score + 1).toString());
+        score_display.style.fontSize = "6vw";
+        setTimeout(() => {
+            score_display.style.fontSize = "4vw";
+        }, 300);
 
     }, options.duration);
 }
@@ -675,3 +681,20 @@ function showOverlay() {
     document.body.appendChild(overlay);
 }
 
+function setMeterValue(amount) {
+    document.getElementById('score-meter').style.width = amount + '%';
+}
+
+function shiftPageOutLeft() {
+    for (var child of document.body.children) {
+        child.style.transform = "translateX(-100vw)";
+        child.style.transition = "transform 1s ease-in-out";
+    }
+}
+
+function shiftPageInLeft() {
+    for (var child of document.body.children) {
+        child.style.transform = "translateX(0vw)";
+        child.style.transition = "transform 1s ease-in-out";
+    }
+}

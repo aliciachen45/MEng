@@ -4,6 +4,7 @@ import random
 from visual import *
 
 SCORE = ScoreDisplay(score=0)
+METER = ScoreMeter()
 
 
 def chest_with_hook_(side="left"):
@@ -79,6 +80,7 @@ class Trial:
 
         items.append(div_(id="stage_indicator")(1))
         items.append(SCORE.get_html())
+        items.append(METER.get_html())
 
         animation_page = div_(style="display: flex;")(*items)
         pages.append(animation_page)
@@ -117,6 +119,7 @@ class Trial:
         )
         items.append(hidden_input)
         items.append(SCORE.get_html())
+        items.append(METER.get_html())
 
         choice_page = div_(style="display: flex;")(*items)
 
@@ -161,6 +164,7 @@ class Trial:
 
         items.append(div_(id="stage_indicator")(2))
         items.append(SCORE.get_html())
+        items.append(METER.get_html())
 
         animation_page = div_(style="display: flex;")(*items)
         pages.append(animation_page)
@@ -187,6 +191,7 @@ class Trial:
         )
         items.append(hidden_input)
         items.append(SCORE.get_html())
+        items.append(METER.get_html())
 
         choice_page = div_(style="display: flex;")(*items)
 
@@ -244,6 +249,7 @@ class TestingTrial(Trial):
 
 def start_page():
     return div_(id="start_page")(
+        ScoreMeter().get_html(),
         button_(id="start_button", onClick="startExperiment()")(
             "Click to begin!"
         ),
@@ -252,6 +258,8 @@ def start_page():
 
 @kesar
 def experiment(uid):
+    SCORE.score = 0
+    METER.curr_score = 0
 
     data = {}
 
@@ -298,9 +306,11 @@ def experiment(uid):
                     else:
                         # If only stage 1, assign score
                         if chosen_side[0] == trial.first_prize_side:
-                            SCORE.score += trial.trial_info["stage_1"][
+                            coin_amount = trial.trial_info["stage_1"][
                                 "prize_coins"
                             ]
+                            SCORE.score += coin_amount
+                            METER.curr_score = SCORE.score
 
                     trial_data["Stage 1 Choice"] = response
                 else:
@@ -308,14 +318,12 @@ def experiment(uid):
 
                     # if stage 2 choice is not the original prize side, add stage 2 coins
                     if chosen_side[0] != trial.first_prize_side:
-                        SCORE.score += trial.trial_info["stage_2"][
-                            "prize_coins"
-                        ]
-                    else:
-                        SCORE.score += trial.trial_info["stage_1"][
-                            "prize_coins"
-                        ]
+                        coin_amount = trial.trial_info["stage_2"]["prize_coins"]
 
+                    else:
+                        coin_amount = trial.trial_info["stage_1"]["prize_coins"]
+                    SCORE.score += coin_amount
+                    METER.curr_score += SCORE.score
             page_ind += 1
         data[trial_num + 1] = trial_data
 

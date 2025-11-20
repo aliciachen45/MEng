@@ -334,3 +334,21 @@ class PrizeWithHook(Object):
         ).get_html(additional_class="hidden")
 
         return div_(id=f"prize_with_hook_container")(prize_html, hook)
+
+
+class ScoreMeter:
+    def __init__(self, name="score_meter", max_score=40):
+        self.curr_score = 0
+        self.name = name
+        self.max_score = max_score
+
+    def get_html(self):
+        # Generate HTML for the score meter
+        print("Current score:", self.curr_score)
+        return div_(class_="meter-bar")(
+            div_(
+                id="score-meter",
+                class_="meter-fill",
+                style=f"width: {self.curr_score}% ;",
+            )()
+        )
