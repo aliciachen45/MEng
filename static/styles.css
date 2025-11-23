@@ -5,7 +5,7 @@ body {
 }
 
 * {
-    transition: all 1.2s ease-in-out;
+    transition: all 1s ease-in-out;
 }
 
 /* 1. Define the animation keyframes */
@@ -79,26 +79,20 @@ body {
         transform: rotateY(0deg);
     }
 
-    28% {
-        transform: rotateY(0deg);
-
-    }
-
     100% {
-        transform: translateY(-50px);
-        z-index: -1;
+        transform: translateY(-20vh);
     }
 }
 
 @keyframes open_chest_simple {
     100% {
-        transform: translateY(-10vh)
+        transform: translateY(-20vh)
     }
 }
 
 @keyframes close_chest_simple {
     0% {
-        transform: translateY(-10vh)
+        transform: translateY(-20vh)
     }
 
     100% {
@@ -131,6 +125,17 @@ body {
         transform: translateY(-100px);
     }
 }
+
+@keyframes shift_in_right {
+    0% {
+        transform: translateX(100vw);
+    }
+
+    100% {
+        transform: translateX(0vw);
+    }
+}
+
 
 
 
@@ -208,7 +213,7 @@ body {
 .hook {
     position: absolute;
     z-index: 10;
-    transition: all 1.2s ease-in-out;
+    transition: all 1s linear;
 }
 
 .hook_left {
@@ -334,7 +339,8 @@ Keyframe animations
 }
 
 .open_chest_rumble_animation {
-    animation: open_chest_rumble 3s ease-in-out forwards;
+    animation: open_chest_rumble 2.5s ease-in-out forwards !important;
+    animation-fill-mode: forwards !important;
 }
 
 .open_chest_simple_animation {
@@ -342,7 +348,7 @@ Keyframe animations
 }
 
 .close_chest_simple_animation {
-    animation: close_chest_simple 0.3s ease-in-out forwards;
+    animation: close_chest_simple 0.5s ease-in-out forwards;
 }
 
 .swipe_up_animation {
@@ -357,18 +363,23 @@ Keyframe animations
     animation: bounce 0.4s ease-in-out forwards;
 }
 
+.shift_out_left_animation {
+    transition: transform 1.2s ease-in-out;
+
+    /* Base position: In view (no translation) */
+    transform: translateX(-100vw) !important;
+}
+
+.shift_out_up_animation {
+    transition: transform 1.2s ease-in-out;
+
+    /* Base position: In view (no translation) */
+    transform: translateY(-100vh) !important;
+}
 
 
 
-
-
-#dot {
-    width: 20px;
-    height: 20px;
-    background-color: #4CAF50;
-    /* Green */
-    border-radius: 50%;
-    position: absolute;
-    /* Crucial for GSAP to control positioning */
-    z-index: 10;
+.shift_in_right_animation {
+    /* Base position: In view (no translation) */
+    animation: shift_in_right 1.2s ease-in-out forwards;
 }

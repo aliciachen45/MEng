@@ -10,7 +10,7 @@ class ScoreDisplay:
     def get_html(self):
         return div_(
             id=self.name,
-            class_=f"score_display",
+            class_=f"score_display keep_between_trials",
         )(f"{self.score}")
 
 
@@ -345,10 +345,10 @@ class ScoreMeter:
     def get_html(self):
         # Generate HTML for the score meter
         print("Current score:", self.curr_score)
-        return div_(class_="meter-bar")(
+        return div_(class_="meter-bar keep_between_trials")(
             div_(
                 id="score-meter",
-                class_="meter-fill",
+                class_="meter-fill keep_between_trials",
                 style=f"width: {self.curr_score}% ;",
             )()
         )

@@ -82,7 +82,9 @@ class Trial:
         items.append(SCORE.get_html())
         items.append(METER.get_html())
 
-        animation_page = div_(style="display: flex;")(*items)
+        animation_page = div_(id="experiment_screen", style="display: flex;")(
+            *items
+        )
         pages.append(animation_page)
 
         # page 2: ask for choice
@@ -121,7 +123,9 @@ class Trial:
         items.append(SCORE.get_html())
         items.append(METER.get_html())
 
-        choice_page = div_(style="display: flex;")(*items)
+        choice_page = div_(id="experiment_screen", style="display: flex;")(
+            *items
+        )
 
         pages.append(choice_page)
 
@@ -166,7 +170,9 @@ class Trial:
         items.append(SCORE.get_html())
         items.append(METER.get_html())
 
-        animation_page = div_(style="display: flex;")(*items)
+        animation_page = div_(id="experiment_screen", style="display: flex;")(
+            *items
+        )
         pages.append(animation_page)
 
         # page 2
@@ -193,7 +199,9 @@ class Trial:
         items.append(SCORE.get_html())
         items.append(METER.get_html())
 
-        choice_page = div_(style="display: flex;")(*items)
+        choice_page = div_(id="experiment_screen", style="display: flex;")(
+            *items
+        )
 
         pages.append(choice_page)
 
@@ -264,8 +272,8 @@ def experiment(uid):
     data = {}
 
     trials = [
-        OneStageTrainingTrial(stage1_coins=4),
-        OneStageTrainingTrial(stage1_coins=2, occluded="partial"),
+        # OneStageTrainingTrial(stage1_coins=4),
+        # OneStageTrainingTrial(stage1_coins=2, occluded="partial"),
         TwoStageTrainingTrial(
             stage1_coins=2, stage2_coins=4, occluded="partial"
         ),

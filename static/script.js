@@ -36,24 +36,6 @@ function recordChoice(choice) {
     }
 }
 
-function revealCoin(coinObject) {
-    console.log("Revealing coin:", coinObject);
-    coinObject.classList.add('prize_reveal_animation');
-    if (coinObject.id.includes('left')) {
-        choice = 'left';
-    } else if (coinObject.id.includes('right')) {
-        choice = 'right';
-    }
-
-    // Record choice
-    recordChoice(choice);
-
-    window.setTimeout(function () {
-        SUBMITTING = true;
-        document.querySelector('form').submit("hi");
-    }, 4000);
-}
-
 function placeCoinsInBag(prize_place_positions) {
     const staggerDelayMs = 100;
     const prize_elements = document.getElementsByClassName('prize');
@@ -70,7 +52,7 @@ function placeCoinsInBag(prize_place_positions) {
             coins[i].classList.add(prize_place_positions[1]);
             setTimeout(() => {
                 new Audio("../audio/drop_coin.mp3").play();
-            }, 700);
+            }, 650);
         }, i * staggerDelayMs);
     }
 }
@@ -106,30 +88,57 @@ function openChest(object) {
     recordChoice(choice);
 
     chest_top.classList.add('open_chest_rumble_animation');
-
-    // Reveal Prize if there is one
-    if (prize_bag_container != null) {
-        console.log("Prize has been found !")
-        setTimeout(() => {
-            revealCoinsAndBag(prize_bag_container, submit = false);
-        }, 2000); // reveal prize after chest opens
-    } else {
-        console.log("No prize for this chest")
-    }
-
     var audio = new Audio("../audio/open_chest_rumble.mp3");
     console.log("Playing audio");
     audio.play();
 
+    // Reveal Prize if there is one
+    if (prize_bag_container != null) {
+        console.log("Prize has been found !")
+        base_timeout = 12500;
+
+        setTimeout(() => {
+            chest_top.style.zIndex = "0";
+        }, 2000);
+
+        setTimeout(() => {
+            revealCoinsAndBag(prize_bag_container, submit = false);
+        }, 2500); // reveal prize after chest opens
+    } else {
+        console.log("No prize for this chest")
+        base_timeout = 5500;
+        setTimeout(() => {
+            new Audio("../audio/empty_chest1.mp3").play();
+            setTimeout(() => {
+                new Audio("../audio/empty_chest2.mp3").play();
+            }, 1500);
+
+        }, 2500);
+    }
+
+
+    setTimeout(() => {
+        chest_top.classList.remove('open_chest_rumble_animation');
+        chest_top.classList.add('close_chest_simple_animation');
+        setTimeout(() => {
+            chest_top.classList.remove('close_chest_simple_animation');
+        }, 500);
+    }, base_timeout);
+
+    setTimeout(() => {
+        shiftPageOutLeft();
+    }, base_timeout + 1000);
+
     window.setTimeout(function () {
         SUBMITTING = true;
         document.querySelector('form').submit("hi");
-    }, 12000);
+    }, base_timeout + 2500);
 }
 
 function revealCoinsAndBag(bagContainerObj, submit = true) {
     console.log("Revealing coin from bag:", bagContainerObj);
     showOverlay();
+
     const staggerDelayMs = 200;
     const bagContainerChildren = bagContainerObj.children
 
@@ -199,7 +208,6 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
             } else {
                 error("Fatal: Unsupported number of coins for reveal:", num_coins);
             }
-            console.log("Final X positions for coin reveal:", coinsFinalX);
             // 3. Reveal coins one by one, starting with the highest coin (last in list)
 
             for (let i = 0; i < coin_order.length; i++) {
@@ -228,7 +236,6 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
                     setTimeout(() => {
                         prizeCoins[coin_order[i]].classList.remove("prize_reveal_animation");
                         startArcAnimation(prizeCoins[coin_order[i]]);
-                        console.log("Spiraling coin into score:", prizeCoins[coin_order[i]]);
                     }, 900);
                 }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 1500 + i * 1000);
             }
@@ -236,24 +243,26 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
         }, 500);
     }, 1200);
 
+    setTimeout(() => {
+        prizeBag.classList.add('shift_out_up_animation');
+    }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000);
+
     if (submit) {
         window.setTimeout(function () {
             SUBMITTING = true;
             document.querySelector('form').submit();
-        }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000);
+        }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000) + 300;
     }
 }
 
 function selectChest(object) {
     showOverlay();
-    console.log("Selecting object:", object);
     var audio = new Audio("../audio/pop.mp3");
     audio.play();
 
     children = object.children;
 
     for (var child of children) {
-        console.log("Child found:", child);
         if (child.id.includes('chest')) {
             chest_top = child;
             chest_top.classList.add('pulse_animation');
@@ -279,9 +288,9 @@ function selectChest(object) {
 
 function stage_1_animation() {
     /* Getting coin element */
+    shiftPageInRight();
     var prizes = document.getElementsByClassName('prize');
 
-    console.log("Found prize elements:", prizes);
     if (prizes.length === 0) {
         console.log("No prize element found for animation.");
         return;
@@ -340,7 +349,7 @@ function stage_1_animation() {
 
     // Stage 0: Initial Delay (The 'oncreation' equivalent)
 
-    const initialDelay = 500; // Wait 0.5 seconds before starting
+    const initialDelay = 2000; // Wait 0.5 seconds before starting
     for (var occluder of occluders) {
         occluder.classList.remove('hidden');
     }
@@ -368,6 +377,8 @@ function stage_1_animation() {
 
                     for (var top of chest_top) {
                         top.classList.add('open_chest_simple_animation');
+                        // Set z-index to behind
+                        top.style.zIndex = "0";
                     }
                     if (PLAY_AUDIO) {
                         new Audio("../audio/open_chest_creak.mp3").play().catch((error) => {
@@ -408,7 +419,7 @@ function stage_1_animation() {
                                 setTimeout(() => {
                                     new Audio("../audio/coin_placement.wav").play();
 
-                                }, 650);
+                                }, 700);
 
                                 // Audio will not play unless a user interacts with the screen. Perhaps, add a "Click to Start" screen before starting the experiment.
 
@@ -426,8 +437,16 @@ function stage_1_animation() {
                                 // setTimeout(() => {
                                 //     coin.classList.add('hidden');
                                 // }, 1200);
+                                setTimeout(() => {
+                                    for (var top of chest_top) {
+                                        top.style.zIndex = "6";
+                                    }
+                                }, 600);
+
 
                                 setTimeout(() => {
+
+
                                     for (var top of chest_top) {
                                         top.classList.remove('open_chest_simple_animation');
                                         top.classList.add('close_chest_simple_animation');
@@ -443,7 +462,6 @@ function stage_1_animation() {
                                             occluder.classList.add('occluder-place-reset');
                                             occluder.style.transition = "all 2s ease-in-out";
                                         }
-
 
                                         // Submit to kesar
                                         window.setTimeout(function () {
@@ -471,7 +489,6 @@ function stage_2_animation() {
 
     const hooks = document.getElementsByClassName('hook');
     for (var object of hooks) {
-        console.log(object.id)
         if (object.id.includes('prize')) {
             hook_pos1_x = object.style.left;
             hook_pos1_y = object.style.top;
@@ -493,7 +510,12 @@ function stage_2_animation() {
         }
     }
 
+
     var chest = document.getElementById(`chest_container_${position}`);
+
+    for (var child of chest.children) {
+        child.style.transition = "all 1s linear";
+    }
     let reset_deltax = "";
     let reset_deltay = "";
     if (position == "right") {
@@ -548,8 +570,6 @@ function stage_2_animation() {
 
                 for (var child of chest.children) {
 
-
-                    console.log("Child found:", child);
                     child.style.left = `calc(${hook_posreset_x} - ${hook_pos2_x} + ${child.style.left})`;
                     child.style.top = `calc(${hook_posreset_y} - ${hook_pos2_y} + ${child.style.top})`;
                 }
@@ -568,23 +588,15 @@ function stage_2_animation() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // stage_1_animation();
-    if (initializeGSAP()) {
-        let stage = document.getElementById('stage_indicator').innerText;
-        console.log("Current stage:", stage);
+    // disableBackButton();
 
-        if (stage == '1') {
-            stage_1_animation();
-        } else if (stage == '2') {
-            stage_2_animation();
-        }
-    } else {
-        setTimeout(() => {
-            if (initializeGSAP()) {
-                runExperimentLogic();
-            } else {
-                console.error("GSAP initialization failed after delay. Animation will not run.");
-            }
-        }, 500);
+    let stage = document.getElementById('stage_indicator').innerText;
+    console.log("Current stage:", stage);
+
+    if (stage == '1') {
+        stage_1_animation();
+    } else if (stage == '2') {
+        stage_2_animation();
     }
 
     // have a tag for each of the stages
@@ -602,9 +614,8 @@ function startArcAnimation(object) {
     const startX = object.style.left; // Assume VW/VH unit is intended
     const startY = object.style.top;
 
-    const endRect = score_display.getBoundingClientRect();
-    const endX = (endRect.left / viewportWidth) * 100;
-    const endY = (endRect.top / viewportHeight) * 100;
+    const endX = 50;
+    const endY = 5;
 
     // --- 2. Calculate Total Translation (Delta) in VW/VH Numbers ---
     const deltaX_num = `calc(${endX}vw - ${startX})`;
@@ -612,7 +623,6 @@ function startArcAnimation(object) {
 
     // --- 3. Define Arc Bulge ---
     const totalBulgeVH = `calc(${deltaY_num} * -0.4)`; // increase as travel length increases
-    console.log("Total Bulge (VH):", totalBulgeVH);
 
     // --- 4. Keyframe Generation Loop ---
     const keyframes = [];
@@ -662,6 +672,11 @@ function startArcAnimation(object) {
             score_display.style.fontSize = "4vw";
         }, 300);
 
+        score_display.style.transform = "scale(1.05)";
+        setTimeout(() => {
+            score_display.style.transform = "scale(1.0)";
+        }, 1000);
+
     }, options.duration);
 }
 
@@ -686,15 +701,79 @@ function setMeterValue(amount) {
 }
 
 function shiftPageOutLeft() {
-    for (var child of document.body.children) {
-        child.style.transform = "translateX(-100vw)";
-        child.style.transition = "transform 1s ease-in-out";
+    experiment_doc = document.getElementById("experiment_screen");
+    console.log("Shifting experiment screen out left:", experiment_doc);
+    for (var child of experiment_doc.children) {
+        console.log("Shifting child out left:", child);
+        if (child.classList.contains('keep_between_trials')) {
+            console.log("Keeping element in place between trials:", child);
+            // Do nothing, keep in place
+        } else {
+            if (child.children.length > 0) {
+                for (var grandchild of child.children) {
+
+                    grandchild.classList.add('shift_out_left_animation');
+                }
+            } else {
+                console.log("No grandchildren found for child:", child);
+                child.classList.add('shift_out_left_animation');
+
+            }
+        }
     }
 }
 
-function shiftPageInLeft() {
-    for (var child of document.body.children) {
-        child.style.transform = "translateX(0vw)";
-        child.style.transition = "transform 1s ease-in-out";
+function shiftPageInRight() {
+    experiment_doc = document.getElementById("experiment_screen");
+    console.log("Shifting experiment screen out left:", experiment_doc);
+    for (var child of experiment_doc.children) {
+        console.log("Shifting child out left:", child);
+        if (child.classList.contains('keep_between_trials')) {
+            console.log("Keeping element in place between trials:", child);
+            // Do nothing, keep in place
+        } else {
+            if (child.children.length > 0) {
+                for (var grandchild of child.children) {
+
+                    grandchild.classList.add('shift_in_right_animation');
+                }
+            } else {
+                console.log("No grandchildren found for child:", child);
+                child.classList.add('shift_in_right_animation');
+            }
+        }
     }
+
+    setTimeout(() => {
+        for (var child of experiment_doc.children) {
+            console.log("Shifting child out left:", child);
+            if (child.classList.contains('keep_between_trials')) {
+                console.log("Keeping element in place between trials:", child);
+                // Do nothing, keep in place
+            } else {
+                if (child.children.length > 0) {
+                    for (var grandchild of child.children) {
+                        grandchild.classList.remove('shift_in_right_animation');
+                    }
+                } else {
+                    console.log("No grandchildren found for child:", child);
+                    child.classList.remove('shift_in_right_animation');
+                }
+            }
+        }
+    }, 1100);
 }
+
+// // This function adds a new, null state to the history
+// // so the back button points to this dummy state.
+// function disableBackButton() {
+//     console.log("Disabling back button");
+//     for (var i = 0; i < 10; i++) {
+//         window.history.pushState(null, "", window.location.href);
+//     }
+//     // 2. Listen for the "Back" click (popstate)
+//     window.onpopstate = function () {
+//         // 3. When they click back, immediately push them forward again
+//         window.history.pushState(null, "", window.location.href);
+//     };
+// }
