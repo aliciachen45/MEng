@@ -5,7 +5,7 @@ body {
 }
 
 * {
-    transition: all 1s ease-in-out;
+    transition: all 1s linear;
 }
 
 /* 1. Define the animation keyframes */
@@ -51,31 +51,23 @@ body {
         transform: rotateY(0deg);
     }
 
-    3% {
+    7% {
         transform: rotateZ(-3deg);
     }
 
-    6% {
-        transform: rotateZ(3deg);
-    }
-
-    9% {
-        transform: rotateZ(-3deg);
-    }
-
-    12% {
-        transform: rotateZ(3deg);
-    }
-
-    15% {
-        transform: rotateZ(-3deg);
-    }
-
-    18% {
+    14% {
         transform: rotateZ(3deg);
     }
 
     21% {
+        transform: rotateZ(-3deg);
+    }
+
+    28% {
+        transform: rotateZ(3deg);
+    }
+
+    35% {
         transform: rotateY(0deg);
     }
 
@@ -227,7 +219,7 @@ body {
     width: 6vw;
     position: absolute;
     opacity: 1;
-    transition: all 0.8s ease-in-out;
+    transition: all 0.8s linear;
 }
 
 .occluder {

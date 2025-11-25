@@ -161,6 +161,8 @@ class Occluder(Object):
 
     def get_html(self, additional_style="", additional_class=""):
         print("Occluder types", self.type)
+        if self.type not in ["partial", "full"]:
+            return None
         flag = img_(
             id=self.name,
             class_=f"occluder {additional_class}",

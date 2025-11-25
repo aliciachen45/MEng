@@ -35,9 +35,9 @@ Training types: 2 chest,
 
 
 class Trial:
-    def __init__(self, trial_info, occluded="", prize_side=None):
+    def __init__(self, trial_info, prize_side=None):
         # trial_info: {stage 1: {include: True/False, prize_coins: int}, stage 2: {include: True/False, prize_coins: int}}
-        self.occluded = occluded
+        # self.occluded = occluded
         self.trial_info = trial_info
         self.first_prize_side = prize_side
         self.num_stages = 2 if trial_info["stage_2"]["include"] else 1
@@ -68,15 +68,41 @@ class Trial:
         items.append(prize_html)
 
         # add occluder:
-        if self.occluded:
+        if self.trial_info["stage_1"]["occluder"] == "full":
             flag_left = Occluder(
-                name="initial_occluder", side="left", type=self.occluded
+                name="initial_occluder", side="left", type="full"
             ).get_html(additional_class="hidden")
             flag_right = Occluder(
-                name="initial_occluder", side="right", type=self.occluded
+                name="initial_occluder", side="right", type="full"
             ).get_html(additional_class="hidden")
-
             items.extend([flag_left, flag_right])
+        elif self.trial_info["stage_1"]["occluder"] == "partial":
+            flag_left = Occluder(
+                name="initial_occluder", side="left", type="partial"
+            ).get_html(additional_class="hidden")
+            flag_right = Occluder(
+                name="initial_occluder", side="right", type="partial"
+            ).get_html(additional_class="hidden")
+            items.extend([flag_left, flag_right])
+        elif self.trial_info["stage_1"]["occluder"] == "one-side":
+            if self.first_prize_side == "left":
+                flag_left = Occluder(
+                    name="initial_occluder", side="left", type="partial"
+                ).get_html(additional_class="hidden")
+                items.append(flag_left)
+            else:
+                flag_right = Occluder(
+                    name="initial_occluder", side="right", type="partial"
+                ).get_html(additional_class="hidden")
+                items.append(flag_right)
+        elif self.trial_info["stage_1"]["occluder"] == "":
+            pass
+        else:
+            raise ValueError(
+                "Invalid occluder type: {}".format(
+                    self.trial_info["stage_1"]["occluder"]
+                )
+            )
 
         items.append(div_(id="stage_indicator")(1))
         items.append(SCORE.get_html())
@@ -164,7 +190,7 @@ class Trial:
             self.right = prize_obj
 
         items.append(PWH_object.get_html())
-        items.append(chest_with_hook_(side=replace_side))
+        # items.append(chest_with_hook_(side=replace_side))
 
         items.append(div_(id="stage_indicator")(2))
         items.append(SCORE.get_html())
@@ -214,13 +240,14 @@ class OneStageTrainingTrial(Trial):
             "stage_1": {
                 "include": True,
                 "prize_coins": stage1_coins,
+                "occluder": occluded,
             },
             "stage_2": {
                 "include": False,
                 "prize_coins": 0,
             },
         }
-        super().__init__(trial_info, occluded=occluded, prize_side=prize_side)
+        super().__init__(trial_info, prize_side=prize_side)
 
 
 class TwoStageTrainingTrial(Trial):
@@ -231,13 +258,14 @@ class TwoStageTrainingTrial(Trial):
             "stage_1": {
                 "include": True,
                 "prize_coins": stage1_coins,
+                "occluder": occluded,
             },
             "stage_2": {
                 "include": True,
                 "prize_coins": stage2_coins,
             },
         }
-        super().__init__(trial_info, occluded=occluded, prize_side=prize_side)
+        super().__init__(trial_info, prize_side=prize_side)
 
 
 class TestingTrial(Trial):
@@ -246,13 +274,14 @@ class TestingTrial(Trial):
             "stage_1": {
                 "include": True,
                 "prize_coins": stage1_coins,
+                "occluder": "one-side",  # can also be full, partial, one-side (implies partial)
             },
             "stage_2": {
                 "include": True,
                 "prize_coins": stage2_coins,
             },
         }
-        super().__init__(trial_info, occluded="full", prize_side=prize_side)
+        super().__init__(trial_info, prize_side=prize_side)
 
 
 def start_page():
@@ -272,7 +301,7 @@ def experiment(uid):
     data = {}
 
     trials = [
-        # OneStageTrainingTrial(stage1_coins=4),
+        OneStageTrainingTrial(stage1_coins=4),
         # OneStageTrainingTrial(stage1_coins=2, occluded="partial"),
         TwoStageTrainingTrial(
             stage1_coins=2, stage2_coins=4, occluded="partial"

@@ -58,6 +58,23 @@ function placeCoinsInBag(prize_place_positions) {
 }
 
 
+function removeObject(object) {
+    console.log("Removing object and descendants:", object);
+
+    // Create an array containing the root object AND all its descendants
+    const allElements = [object, ...object.querySelectorAll('*')];
+    const dy = "-100vh";
+
+    // Loop through every element in that array
+    allElements.forEach(element => {
+        // element.style.transition = "all 1s linear !important";
+        // Get current top or default to 0px to prevent "calc( + -100vh)" errors
+        var currentTop = element.style.top;
+
+        element.style.top = `calc(${currentTop} + ${dy})`;
+    });
+}
+
 function openChest(object) {
     showOverlay();
 
@@ -74,7 +91,6 @@ function openChest(object) {
             prize_bag_container = child;
         }
     }
-    console.log('Prize_bag', prize_bag_container);
 
     // Find choice based on which chest was clicked
 
@@ -87,6 +103,17 @@ function openChest(object) {
     // Record choice
     recordChoice(choice);
 
+
+    // First remove the non-chosen chest
+    non_chosen = choice == 'left' ? 'right' : 'left';
+    Array.from(object.parentElement.children).forEach(sibling => {
+        if (sibling.id.includes(non_chosen)) {
+            removeObject(sibling);
+        }
+    });
+    let base_timeout = 800;
+
+
     chest_top.classList.add('open_chest_rumble_animation');
     var audio = new Audio("../audio/open_chest_rumble.mp3");
     console.log("Playing audio");
@@ -95,27 +122,28 @@ function openChest(object) {
     // Reveal Prize if there is one
     if (prize_bag_container != null) {
         console.log("Prize has been found !")
-        base_timeout = 12500;
 
         setTimeout(() => {
             chest_top.style.zIndex = "0";
-        }, 2000);
+        }, base_timeout + 2000);
 
         setTimeout(() => {
             revealCoinsAndBag(prize_bag_container, submit = false);
-        }, 2500); // reveal prize after chest opens
+        }, base_timeout + 2500); // reveal prize after chest opens
+        base_timeout += 12500;
+
     } else {
         console.log("No prize for this chest")
-        base_timeout = 5500;
         setTimeout(() => {
             new Audio("../audio/empty_chest1.mp3").play();
             setTimeout(() => {
                 new Audio("../audio/empty_chest2.mp3").play();
-            }, 1500);
+            }, 1000);
 
-        }, 2500);
+        }, base_timeout + 2200);
+        base_timeout = 5500;
+
     }
-
 
     setTimeout(() => {
         chest_top.classList.remove('open_chest_rumble_animation');
@@ -145,13 +173,36 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
     let prizeBag = null;
     let prizeCoins = [];
 
+    let choice = "";
     for (var child of bagContainerChildren) {
         if (child.classList.contains('prize_bag')) {
             prizeBag = child;
+            if (child.id.includes('left')) {
+                choice = 'left';
+            } else if (child.id.includes('right')) {
+                choice = 'right';
+            } else {
+                console.error("Fatal: Could not determine choice from bag id:", child.id);
+            }
         } else {
             prizeCoins.push(child);
         }
     }
+
+    // First remove the non-chosen chest
+    var remove_delay = 0;
+
+    if (submit) {
+        non_chosen = choice == 'left' ? 'right' : 'left';
+        Array.from(bagContainerObj.parentElement.children).forEach(sibling => {
+            if (sibling.id.includes(non_chosen)) {
+                removeObject(sibling);
+            }
+        });
+        remove_delay = 800;
+    }
+
+
     var num_coins = prizeCoins.length;
 
     console.log("Found prize bag:", prizeBag);
@@ -162,9 +213,12 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
     delta_y = `calc(${prizeBag.style.height} * 2/3)`;
     console.log("Delta Y for bag rise:", delta_y);
 
-    for (var child of bagContainerChildren) {
-        child.style.top = `calc(${child.style.top} - ${delta_y})`;
-    }
+    setTimeout(() => {
+        for (var child of bagContainerChildren) {
+            child.style.top = `calc(${child.style.top} - ${delta_y})`;
+        }
+    }, remove_delay);
+
 
     // 2. Open bag 
     setTimeout(() => {
@@ -227,7 +281,6 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
             }
 
             // Add animation for spiral into score
-
             for (let i = 0; i < coin_order.length; i++) {
                 setTimeout(() => {
                     prizeCoins[coin_order[i]].classList.remove('bounce_animation');
@@ -241,17 +294,17 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
             }
             // }
         }, 500);
-    }, 1200);
+    }, remove_delay + 1200);
 
     setTimeout(() => {
         prizeBag.classList.add('shift_out_up_animation');
-    }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000);
+    }, remove_delay + (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000);
 
     if (submit) {
         window.setTimeout(function () {
             SUBMITTING = true;
             document.querySelector('form').submit();
-        }, (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000) + 300;
+        }, remove_delay + (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000 + 1000);
     }
 }
 
@@ -262,6 +315,16 @@ function selectChest(object) {
 
     children = object.children;
 
+    let choice = "";
+    if (object.id.includes('left')) {
+        choice = 'left';
+    } else if (object.id.includes('right')) {
+        choice = 'right';
+    } else {
+        console.error("Fatal: Could not determine choice from object id:", object.id);
+    }
+
+
     for (var child of children) {
         if (child.id.includes('chest')) {
             chest_top = child;
@@ -269,21 +332,28 @@ function selectChest(object) {
         }
     }
 
-    // Find choice based on which chest was clicked
+    // First remove the non-chosen chest
+    non_chosen = choice == 'left' ? 'right' : 'left';
+    Array.from(object.parentElement.children).forEach(sibling => {
+        if (sibling.id.includes(non_chosen)) {
+            console.log("Removing sibling:", sibling);
+            setTimeout(() => {
+                removeObject(sibling);
+            }, 700);
+        }
+    });
 
-    if (object.id.includes('left')) {
-        choice = 'left';
-    } else if (object.id.includes('right')) {
-        choice = 'right';
-    }
 
     // Record choice
     recordChoice(choice);
 
+
+
+
     window.setTimeout(function () {
         SUBMITTING = true;
         document.querySelector('form').submit();
-    }, 2000);
+    }, 2500);
 }
 
 function stage_1_animation() {
@@ -330,12 +400,6 @@ function stage_1_animation() {
     /* Getting occluder elements */
 
     const occluders = document.getElementsByClassName('occluder');
-    if (occluders.length === 0) {
-        console.error("No occluder elements found.");
-
-    } else {
-        console.log("Found occluders:", occluders);
-    }
 
 
     /* Resetting elements to correct positions */
@@ -467,7 +531,7 @@ function stage_1_animation() {
                                         window.setTimeout(function () {
                                             SUBMITTING = true; // Kesar global variable
                                             document.querySelector('form').submit();
-                                        }, 2000);
+                                        }, 1800);
                                     }, occluder_timeout);
                                 }, 1200);
 
@@ -493,11 +557,12 @@ function stage_2_animation() {
             hook_pos1_x = object.style.left;
             hook_pos1_y = object.style.top;
             var position = object.id.split('_')[2];
-            var hook = object
-        } else if (object.id.includes('chest')) {
-            hook_pos2_x = object.style.left;
-            hook_pos2_y = object.style.top;
+            var hook = object;
         }
+        // else if (object.id.includes('chest')) {
+        //     hook_pos2_x = object.style.left;
+        //     hook_pos2_y = object.style.top;
+        // }
     }
 
     const all_prize_elements = document.getElementsByClassName('prize');
@@ -511,11 +576,11 @@ function stage_2_animation() {
     }
 
 
-    var chest = document.getElementById(`chest_container_${position}`);
+    // var chest = document.getElementById(`chest_container_${position}`);
 
-    for (var child of chest.children) {
-        child.style.transition = "all 1s linear";
-    }
+    // for (var child of chest.children) {
+    //     child.style.transition = "all 1s linear";
+    // }
     let reset_deltax = "";
     let reset_deltay = "";
     if (position == "right") {
@@ -560,25 +625,20 @@ function stage_2_animation() {
         hook.style.top = hook_pos1_y;
 
         setTimeout(() => {
-            hook.style.left = hook_pos2_x;
-            hook.style.top = hook_pos2_y;
-
-            setTimeout(() => {
-                hook.style.left = hook_posreset_x;
-                hook.style.top = hook_posreset_y;
+            hook.style.left = hook_posreset_x;
+            hook.style.top = hook_posreset_y;
 
 
-                for (var child of chest.children) {
+            // for (var child of chest.children) {
 
-                    child.style.left = `calc(${hook_posreset_x} - ${hook_pos2_x} + ${child.style.left})`;
-                    child.style.top = `calc(${hook_posreset_y} - ${hook_pos2_y} + ${child.style.top})`;
-                }
-                // Submit to kesar
-                window.setTimeout(function () {
-                    SUBMITTING = true; // Kesar global variable
-                    document.querySelector('form').submit();
-                }, 2000);
-            }, 1200);
+            //     child.style.left = `calc(${hook_posreset_x} - ${hook_pos2_x} + ${child.style.left})`;
+            //     child.style.top = `calc(${hook_posreset_y} - ${hook_pos2_y} + ${child.style.top})`;
+            // }
+            // Submit to kesar
+            window.setTimeout(function () {
+                SUBMITTING = true; // Kesar global variable
+                document.querySelector('form').submit();
+            }, 2000);
         }, 1200);
 
     }, 1200);
@@ -690,7 +750,7 @@ function showOverlay() {
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.1)', // Slightly visible for feedback (TODO: REMOVE)
+        // backgroundColor: 'rgba(0,0,0,0.1)', // Slightly visible for feedback (TODO: REMOVE)
         zIndex: 9999
     });
     document.body.appendChild(overlay);
@@ -701,10 +761,14 @@ function setMeterValue(amount) {
 }
 
 function shiftPageOutLeft() {
+
+
     experiment_doc = document.getElementById("experiment_screen");
-    console.log("Shifting experiment screen out left:", experiment_doc);
-    for (var child of experiment_doc.children) {
-        console.log("Shifting child out left:", child);
+
+    const allElements = [...experiment_doc.querySelectorAll('*')];
+
+    // for (var child of experiment_doc.children) {
+    for (var child of allElements) {
         if (child.classList.contains('keep_between_trials')) {
             console.log("Keeping element in place between trials:", child);
             // Do nothing, keep in place
@@ -715,7 +779,6 @@ function shiftPageOutLeft() {
                     grandchild.classList.add('shift_out_left_animation');
                 }
             } else {
-                console.log("No grandchildren found for child:", child);
                 child.classList.add('shift_out_left_animation');
 
             }
@@ -725,9 +788,7 @@ function shiftPageOutLeft() {
 
 function shiftPageInRight() {
     experiment_doc = document.getElementById("experiment_screen");
-    console.log("Shifting experiment screen out left:", experiment_doc);
     for (var child of experiment_doc.children) {
-        console.log("Shifting child out left:", child);
         if (child.classList.contains('keep_between_trials')) {
             console.log("Keeping element in place between trials:", child);
             // Do nothing, keep in place
@@ -738,7 +799,6 @@ function shiftPageInRight() {
                     grandchild.classList.add('shift_in_right_animation');
                 }
             } else {
-                console.log("No grandchildren found for child:", child);
                 child.classList.add('shift_in_right_animation');
             }
         }
@@ -746,7 +806,6 @@ function shiftPageInRight() {
 
     setTimeout(() => {
         for (var child of experiment_doc.children) {
-            console.log("Shifting child out left:", child);
             if (child.classList.contains('keep_between_trials')) {
                 console.log("Keeping element in place between trials:", child);
                 // Do nothing, keep in place
@@ -756,7 +815,6 @@ function shiftPageInRight() {
                         grandchild.classList.remove('shift_in_right_animation');
                     }
                 } else {
-                    console.log("No grandchildren found for child:", child);
                     child.classList.remove('shift_in_right_animation');
                 }
             }
