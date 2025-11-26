@@ -130,9 +130,6 @@ body {
 
 
 
-
-
-
 /* Generic */
 #click-blocker {
     position: fixed;
@@ -179,6 +176,22 @@ body {
     display: none;
 }
 
+#start_button {
+    position: fixed;
+    top: 40%;
+    left: 40%;
+    padding: 2vw 4vw;
+    font-size: 2vw;
+    background-color: #949994;
+    color: white;
+    border: none;
+    border-radius: 1vw;
+    z-index: 100;
+    /* Initial shadow state */
+    box-shadow: 0 5px 0 0 #6b6b6b;
+    /* 0px horizontal, 5px vertical, 0 blur, 0 spread, color */
+}
+
 :root {
     --animation-speed: 2s;
 }
@@ -193,7 +206,7 @@ body {
     position: absolute;
     /* z-index: 5; */
     z-index: 1;
-    transition: all 1s linear !important;
+    transition: all 0.8s linear;
 
     /* TODO: CHANGE LATER back to 1 */
 }
@@ -205,7 +218,7 @@ body {
 .hook {
     position: absolute;
     z-index: 10;
-    transition: all 1s linear;
+    transition: all 0.8s linear;
 }
 
 .hook_left {
@@ -214,13 +227,11 @@ body {
 
 #hook_right {}
 
-.coin_stage_1,
-.coin_stage_2 {
-    width: 6vw;
-    position: absolute;
+/* .coin_stage_1,*/
+/* .coin_stage_2 {
     opacity: 1;
-    transition: all 0.8s linear;
-}
+    transition: all 0.6s linear !important;
+} */
 
 .occluder {
     z-index: 10;
@@ -240,6 +251,111 @@ body {
 }
 
 
+/* Ripple Effect Styles */
+
+.ripple {
+    /* Keep your existing setup */
+    position: absolute;
+    height: 60%;
+    top: 20%;
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    transition: none;
+    filter: drop-shadow(0 0 5px white);
+
+    /* Keep the Moving Gradient setup */
+    background-image: linear-gradient(90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 1) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+}
+
+/* --- MODE 1: FILL IS > 50% (Shooting Right) --- */
+.ripple.facing-right {
+    transform-origin: left center;
+
+    /* THE FIX: Fade out the Start (Left side) */
+    /* This forces the pixel line at 50% to be invisible */
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%);
+    mask-image: linear-gradient(to right, transparent 0%, black 20%);
+}
+
+/* --- MODE 2: FILL IS < 50% (Shooting Left) --- */
+.ripple.facing-left {
+    transform-origin: right center;
+
+    /* THE FIX: Fade out the Start (Right side) */
+    /* This forces the pixel line at 50% to be invisible */
+    -webkit-mask-image: linear-gradient(to left, transparent 0%, black 20%);
+    mask-image: linear-gradient(to left, transparent 0%, black 20%);
+}
+
+/* --- ANIMATIONS --- */
+
+.ripple.facing-right.active {
+    animation: shoot-pulse-right 0.6s ease-out forwards;
+}
+
+.ripple.facing-left.active {
+    animation: shoot-pulse-left 0.6s ease-out forwards;
+}
+
+/* SHOOT RIGHT (Center -> Tip) */
+@keyframes shoot-pulse-right {
+    0% {
+        opacity: 1;
+        transform: scaleX(0);
+        /* Start compressed */
+        background-position: 0% 0;
+        /* Gradient starts at the Left (Origin) */
+    }
+
+    40% {
+        opacity: 1;
+        transform: scaleX(1);
+        /* Fully Expanded */
+        background-position: 50% 0;
+        /* Gradient is moving... */
+    }
+
+    100% {
+        opacity: 0;
+        /* Fade out */
+        transform: scaleX(1);
+        background-position: 100% 0;
+        /* Gradient finishes at the Right (Tip) */
+    }
+}
+
+/* SHOOT LEFT (Center -> Tip) */
+@keyframes shoot-pulse-left {
+    0% {
+        opacity: 1;
+        transform: scaleX(0);
+        /* Start compressed */
+        background-position: 100% 0;
+        /* Gradient starts at the Right (Origin) */
+    }
+
+    40% {
+        opacity: 1;
+        transform: scaleX(1);
+        /* Fully Expanded */
+        background-position: 50% 0;
+        /* Gradient is moving... */
+    }
+
+    100% {
+        opacity: 0;
+        /* Fade out */
+        transform: scaleX(1);
+        background-position: 0% 0;
+        /* Gradient finishes at the Left (Tip) */
+    }
+}
 
 /*
 Stage 1 animation positions
@@ -356,14 +472,14 @@ Keyframe animations
 }
 
 .shift_out_left_animation {
-    transition: transform 1.2s ease-in-out;
+    transition: all 1.2s ease-in-out;
 
     /* Base position: In view (no translation) */
     transform: translateX(-100vw) !important;
 }
 
 .shift_out_up_animation {
-    transition: transform 1.2s ease-in-out;
+    transition: all 1.2s ease-in-out !important;
 
     /* Base position: In view (no translation) */
     transform: translateY(-100vh) !important;

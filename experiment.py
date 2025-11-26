@@ -3,7 +3,7 @@ from constants import *
 import random
 from visual import *
 
-SCORE = ScoreDisplay(score=0)
+SCORE = ScoreDisplay()
 METER = ScoreMeter()
 
 
@@ -286,7 +286,6 @@ class TestingTrial(Trial):
 
 def start_page():
     return div_(id="start_page")(
-        ScoreMeter().get_html(),
         button_(id="start_button", onClick="startExperiment()")(
             "Click to begin!"
         ),
@@ -296,8 +295,7 @@ def start_page():
 @kesar
 def experiment(uid):
     SCORE.score = 0
-    METER.curr_score = 0
-
+    METER.curr_score = SCORE.score
     data = {}
 
     trials = [
@@ -322,6 +320,7 @@ def experiment(uid):
             "trial_number": trial_num + 1,
             "prize_side": trial.first_prize_side,
         }
+        prev_chosen_side = None
 
         while page_ind < len(all_pages):
             print("Displaying page", page_ind + 1, "of", len(all_pages))
@@ -340,6 +339,7 @@ def experiment(uid):
                             keep_side=chosen_side[0]
                         )
                         all_pages.extend(stage2_pages)
+                        prev_chosen_side = chosen_side
                     else:
                         # If only stage 1, assign score
                         if chosen_side[0] == trial.first_prize_side:
@@ -352,17 +352,21 @@ def experiment(uid):
                     trial_data["Stage 1 Choice"] = response
                 else:
                     trial_data["Stage 2 Choice"] = response
+                    chosen_side = response["clicked_side"]
 
                     # if stage 2 choice is not the original prize side, add stage 2 coins
-                    if chosen_side[0] != trial.first_prize_side:
+                    if chosen_side[0] != prev_chosen_side[0]:
+                        print(
+                            "Stage 2 choice differs from stage 1 choice. They chose stage 2 coins"
+                        )
                         coin_amount = trial.trial_info["stage_2"]["prize_coins"]
-
                     else:
                         coin_amount = trial.trial_info["stage_1"]["prize_coins"]
                     SCORE.score += coin_amount
-                    METER.curr_score += SCORE.score
+                    METER.curr_score = SCORE.score
             page_ind += 1
         data[trial_num + 1] = trial_data
+        print(trial_data)
 
     return data  # to be logged
 

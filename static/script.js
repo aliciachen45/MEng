@@ -52,7 +52,7 @@ function placeCoinsInBag(prize_place_positions) {
             coins[i].classList.add(prize_place_positions[1]);
             setTimeout(() => {
                 new Audio("../audio/drop_coin.mp3").play();
-            }, 650);
+            }, 750);
         }, i * staggerDelayMs);
     }
 }
@@ -67,11 +67,14 @@ function removeObject(object) {
 
     // Loop through every element in that array
     allElements.forEach(element => {
-        // element.style.transition = "all 1s linear !important";
+        // element.classList.add('shift_out_up_animation');
+        element.style.transition = "all 1s linear";
         // Get current top or default to 0px to prevent "calc( + -100vh)" errors
-        var currentTop = element.style.top;
-
-        element.style.top = `calc(${currentTop} + ${dy})`;
+        requestAnimationFrame(() => {
+            var currentTop = element.style.top;
+            console.log('New transition style:', element.style.transition);
+            element.style.top = `calc(${currentTop} + ${dy})`;
+        });
     });
 }
 
@@ -125,11 +128,11 @@ function openChest(object) {
 
         setTimeout(() => {
             chest_top.style.zIndex = "0";
-        }, base_timeout + 2000);
+        }, base_timeout + 1800);
 
         setTimeout(() => {
             revealCoinsAndBag(prize_bag_container, submit = false);
-        }, base_timeout + 2500); // reveal prize after chest opens
+        }, base_timeout + 2200); // reveal prize after chest opens
         base_timeout += 12500;
 
     } else {
@@ -164,6 +167,7 @@ function openChest(object) {
 }
 
 function revealCoinsAndBag(bagContainerObj, submit = true) {
+
     console.log("Revealing coin from bag:", bagContainerObj);
     showOverlay();
 
@@ -200,6 +204,8 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
             }
         });
         remove_delay = 800;
+        recordChoice(choice);
+
     }
 
 
@@ -294,7 +300,7 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
             }
             // }
         }, 500);
-    }, remove_delay + 1200);
+    }, remove_delay + 1000);
 
     setTimeout(() => {
         prizeBag.classList.add('shift_out_up_animation');
@@ -535,7 +541,7 @@ function stage_1_animation() {
                                     }, occluder_timeout);
                                 }, 1200);
 
-                            }, 1000);
+                            }, 800);
 
                         }, occluder_timeout);
                         // }, occluder_timeout);
@@ -669,6 +675,7 @@ function startArcAnimation(object) {
     const score_display = document.getElementById('score_display');
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const rippleEl = document.getElementById('ripple-overlay');
 
     // --- 1. Get Start and End Points ---
     const startX = object.style.left; // Assume VW/VH unit is intended
@@ -714,7 +721,7 @@ function startArcAnimation(object) {
 
     // --- 5. Define Animation Options ---
     const options = {
-        duration: 500, // Longer duration for better visual smoothness
+        duration: 700, // Longer duration for better visual smoothness
         easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', // Still linear for constant speed
         fill: 'forwards'
     };
@@ -724,18 +731,31 @@ function startArcAnimation(object) {
     // --- 6. Run the Animation ---
     setTimeout(() => {
         object.classList.add('hidden');
-        curr_score = parseInt(score_display.innerText);
+
+        let curr_score = parseInt(score_display.innerText);
         score_display.innerText = (curr_score + 1).toString();
         setMeterValue((curr_score + 1).toString());
+
         score_display.style.fontSize = "6vw";
         setTimeout(() => {
             score_display.style.fontSize = "4vw";
         }, 300);
 
-        score_display.style.transform = "scale(1.05)";
-        setTimeout(() => {
-            score_display.style.transform = "scale(1.0)";
-        }, 1000);
+
+        //TESTING
+        rippleEl.classList.remove('active');
+
+        // Force a "Reflow" so the browser realizes we removed the class
+        // (This is a necessary hack in JS animations)
+        void rippleEl.offsetWidth;
+
+        rippleEl.classList.add('active');
+
+
+        // score_display.style.transform = "scale(1.05)";
+        // setTimeout(() => {
+        //     score_display.style.transform = "scale(1.0)";
+        // }, 1000);
 
     }, options.duration);
 }
@@ -757,7 +777,39 @@ function showOverlay() {
 }
 
 function setMeterValue(amount) {
-    document.getElementById('score-meter').style.width = amount + '%';
+    const meter = document.getElementById('score-meter');
+    const ripple = document.getElementById('ripple-overlay');
+
+    // 1. Update the green bar fill
+    if (meter) {
+        meter.style.width = amount + '%';
+    }
+
+    // 2. Position the Ripple Beam
+    if (ripple) {
+        // Reset classes for direction
+        ripple.classList.remove('facing-right', 'facing-left');
+
+        if (amount >= 50) {
+            // --- SHOOT RIGHT ---
+            // Start at 50%, Width is the difference (e.g. 70% - 50% = 20% width)
+            ripple.style.left = '50%';
+            ripple.style.right = 'auto'; // Clear right property
+            ripple.style.width = (amount - 50) + '%';
+
+            ripple.classList.add('facing-right');
+
+        } else {
+            // --- SHOOT LEFT ---
+            // Start at amount (e.g. 30%), Width is difference (50% - 30% = 20%)
+            // Visually, this spans from 30% to 50%
+            ripple.style.left = amount + '%';
+            ripple.style.right = 'auto';
+            ripple.style.width = (50 - amount) + '%';
+
+            ripple.classList.add('facing-left');
+        }
+    }
 }
 
 function shiftPageOutLeft() {

@@ -219,7 +219,9 @@ class FilledBag(Bag):
         if self.num_coins not in [1, 2, 4]:
             raise ValueError("num_coins must be 1, 2, or 4")
 
-    def get_html(self, additional_style="", additional_class=""):
+    def get_html(
+        self, additional_style="", additional_class="", additional_coin_class=""
+    ):
         items = []
 
         # Add coins inside the bag
@@ -231,7 +233,7 @@ class FilledBag(Bag):
                 y=coin_y,
             ).get_html(
                 additional_style=additional_style,
-                additional_class=additional_class,
+                additional_class=f"{additional_class} {additional_coin_class}",
             )
             items.append(coin)
 
@@ -339,10 +341,9 @@ class PrizeWithHook(Object):
 
 
 class ScoreMeter:
-    def __init__(self, name="score_meter", max_score=40):
+    def __init__(self, name="score_meter"):
         self.curr_score = 0
         self.name = name
-        self.max_score = max_score
 
     def get_html(self):
         # Generate HTML for the score meter
@@ -352,5 +353,6 @@ class ScoreMeter:
                 id="score-meter",
                 class_="meter-fill keep_between_trials",
                 style=f"width: {self.curr_score}% ;",
-            )()
+            )(),
+            div_(id="ripple-overlay", class_="ripple")(),
         )
