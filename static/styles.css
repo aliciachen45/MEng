@@ -72,13 +72,13 @@ body {
     }
 
     100% {
-        transform: translateY(-20vh);
+        transform: translateY(-25vh);
     }
 }
 
 @keyframes open_chest_simple {
     100% {
-        transform: translateY(-20vh)
+        transform: translateY(-25vh)
     }
 }
 
@@ -172,7 +172,7 @@ body {
     transition: width .3s;
 }
 
-#stage_indicator {
+.variable {
     display: none;
 }
 
@@ -235,7 +235,7 @@ body {
 
 .occluder {
     z-index: 10;
-    transition: all 1.8s ease-in-out;
+    transition: all 1.6s ease-in-out;
 }
 
 .chest_bottom_image {

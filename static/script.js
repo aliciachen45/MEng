@@ -1,22 +1,6 @@
 // static/script.js
-// const blocker = document.getElementById('click-blocker');
-
-
-
-
-// import { gsap } from "gsap";
-// import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 const PLAY_AUDIO = true;
-// function initializeGSAP() {
-//     // Check if the global object exists before using it
-//     if (typeof gsap !== 'undefined' && typeof MotionPathPlugin !== 'undefined') {
-//         gsap.registerPlugin(MotionPathPlugin);
-//         console.log("GSAP and MotionPathPlugin registered successfully.");
-//         return true;
-//     }
-//     console.error("GSAP or MotionPathPlugin not yet defined.");
-//     return false;
-// }
+const SCRIPT_PATH = "../audio/script";
 function initializeGSAP() { return true; }
 
 function startExperiment() {
@@ -133,7 +117,14 @@ function openChest(object) {
         setTimeout(() => {
             revealCoinsAndBag(prize_bag_container, submit = false);
         }, base_timeout + 2200); // reveal prize after chest opens
-        base_timeout += 12500;
+
+        if (prize_bag_container.children.length - 1 == 4) {
+            base_timeout += 11000;
+        } else if (prize_bag_container.children.length - 1 == 2) {
+            base_timeout += 8000;
+        } else {
+            base_timeout += 2500;
+        }
 
     } else {
         console.log("No prize for this chest")
@@ -149,21 +140,68 @@ function openChest(object) {
     }
 
     setTimeout(() => {
+        coin_reveal_response(prize_bag_container);
+    }, base_timeout + 500);
+
+    setTimeout(() => {
         chest_top.classList.remove('open_chest_rumble_animation');
         chest_top.classList.add('close_chest_simple_animation');
         setTimeout(() => {
             chest_top.classList.remove('close_chest_simple_animation');
         }, 500);
-    }, base_timeout);
+    }, base_timeout + 3500);
+
+
 
     setTimeout(() => {
         shiftPageOutLeft();
-    }, base_timeout + 1000);
+    }, base_timeout + 4500);
 
     window.setTimeout(function () {
         SUBMITTING = true;
         document.querySelector('form').submit("hi");
-    }, base_timeout + 2500);
+    }, base_timeout + 6000);
+}
+
+function coin_reveal_response(prize_bag_container) {
+    // Add script response
+    var trial_type = document.getElementById("trial_type").innerText;
+    const num_coins_chosen = prize_bag_container ? prize_bag_container.children.length - 1 : 0;
+
+
+    let total_delay = 3500;
+
+    console.log("Trial type:", trial_type);
+    if (trial_type == "testing") {
+        console.log("Adding testing trial script responses");
+        if (num_coins_chosen > 0) {
+            add_script("great_job", 0)
+            add_script(`${num_coins_chosen}_coins.wav`, 1500);
+        } else {
+            add_script("oh_no_no_coins.wav", 0)
+        }
+    } else {
+        var max_possible_coins = document.getElementById("max_coins").innerText;
+        if (num_coins_chosen == 0) {
+            add_script("lets_try_again.mp3", 0);
+        } else if (num_coins_chosen == max_possible_coins) {
+            var num_stages = document.getElementById("num_stages").innerText;
+            if (num_stages == "2") {
+                add_script("great_job.wav", 0);
+            } else {
+                var first_trial = document.getElementById("first_trial").innerText;
+                if (first_trial == "True") {
+                    add_script("great_job_watch.mp3", 0);
+                    total_delay = 7000;
+                } else {
+                    add_script("great_job_found.wav", 0);
+                }
+            }
+        } else {
+            add_script("nice_try_again.wav", 0);
+        }
+    }
+    return total_delay;
 }
 
 function revealCoinsAndBag(bagContainerObj, submit = true) {
@@ -245,6 +283,8 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
             // TODO: Change this later to match the correct reveal animations
             if (num_coins == 1) {
                 coinsFinalX.push(`calc(${prizeBag.style.left} + ${prizeBag.style.width}/2) - ${prizeCoins[0].style.width}/2)`);
+                coin_order = [0];
+                coin_delay = [0];
             } else if (num_coins == 2) {
                 // i = 0 coin starts left, goes left
                 coinsFinalX.push(`calc(${prizeBag.style.left} + ${prizeBag.style.width}/3) - ${prizeCoins[0].style.width}/2)`);
@@ -302,15 +342,27 @@ function revealCoinsAndBag(bagContainerObj, submit = true) {
         }, 500);
     }, remove_delay + 1000);
 
-    setTimeout(() => {
-        prizeBag.classList.add('shift_out_up_animation');
-    }, remove_delay + (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000);
+
+    remove_delay = remove_delay + (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000
 
     if (submit) {
+        setTimeout(() => {
+            coin_reveal_response(bagContainerObj);
+        }, remove_delay);
+        remove_delay += 2500;
+    }
+
+    setTimeout(() => {
+        prizeBag.classList.add('shift_out_up_animation');
+    }, remove_delay);
+
+    remove_delay += 3500;
+    if (submit) {
+
         window.setTimeout(function () {
             SUBMITTING = true;
             document.querySelector('form').submit();
-        }, remove_delay + (num_coins - 1) * 3 / 2 * staggerDelayMs + 4000 + num_coins * 1000 + 1000);
+        }, remove_delay);
     }
 }
 
@@ -360,6 +412,14 @@ function selectChest(object) {
         SUBMITTING = true;
         document.querySelector('form').submit();
     }, 2500);
+}
+
+function add_script(audio_src, timeout) {
+    setTimeout(() => {
+        var audio = new Audio(`${SCRIPT_PATH}/${audio_src}`);
+        console.log("Playing audio");
+        audio.play();
+    }, timeout);
 }
 
 function stage_1_animation() {
@@ -419,7 +479,17 @@ function stage_1_animation() {
 
     // Stage 0: Initial Delay (The 'oncreation' equivalent)
 
-    const initialDelay = 2000; // Wait 0.5 seconds before starting
+    var first_trial = document.getElementById("first_trial").innerText;
+
+    if (first_trial == "True") {
+        add_script("look_treasure_chest.wav", 1000);
+        var initialDelay = 5500;
+    } else {
+        add_script("now_look_treasure_chest.wav", 1000);
+        var initialDelay = 6500;
+    }
+
+    // Wait 0.5 seconds before starting
     for (var occluder of occluders) {
         occluder.classList.remove('hidden');
     }
@@ -441,6 +511,8 @@ function stage_1_animation() {
             // Close bag
             setTimeout(() => {
                 bag.src = "/images/closed_bag.png";
+                console.log(prizes.length - 1)
+                add_script(`${prizes.length - 1}_coins_in_bag.wav`, 0);
 
                 // Move chest tops up to show it is empty
                 setTimeout(() => {
@@ -457,96 +529,106 @@ function stage_1_animation() {
                     }
 
                     // Introduce occluders, doesn't cover the chest yet
-                    var occluder_timeout = (occluders.length > 0) ? 1800 : 1;
+                    var occluder_timeout = 0;
 
                     setTimeout(() => {
                         for (var occluder of occluders) {
                             occluder.classList.remove('occluder-place-reset');
+                            occluder_timeout += 1200;
                             // occluder.classList.add('occluder-place-1');
                         }
+                        if (occluders.length > 0) {
+                            var play_flag_intro = document.getElementById("play_flag_intro").innerText;
+                            var occluder_type = document.getElementById("occluder_type").innerText;
 
+                            if (play_flag_intro == "True") {
+                                if (occluder_type == "full") {
+                                    add_script("large_pirate_flags.wav", 1500);
+                                    occluder_timeout += 7000;
+                                } else if (occluder_type == "partial") {
+                                    add_script("intro_flags.wav", 1500);
+                                    occluder_timeout += 4000;
 
-                        // Pull occluders down in front of chest. Removing occluder-place-1 will return occluders to their original position
-                        // setTimeout(() => {
-                        // for (var occluder of occluders) {
-                        //     occluder.classList.remove('occluder-place-1');
-                        // }
+                                }
+                            }
+                        }
 
                         // Move the coin from center top to center mid
+
                         setTimeout(() => {
-                            for (var prize of prizes) {
-                                prize.classList.remove(prize_place_positions[1]);
-                                prize.classList.add(prize_place_positions[2]);
+                            add_script('watch.wav', 500);
 
-                            }
-
-                            // Move from center mid to left or right
                             setTimeout(() => {
-                                /* Removing coin-place-2 will return coin to its original (aka final) position */
+
+
+
                                 for (var prize of prizes) {
-                                    prize.classList.remove(prize_place_positions[2]);
+                                    prize.classList.remove(prize_place_positions[1]);
+                                    prize.classList.add(prize_place_positions[2]);
+
                                 }
+
+                                // Move from center mid to left or right
                                 setTimeout(() => {
-                                    new Audio("../audio/coin_placement.wav").play();
-
-                                }, 700);
-
-                                // Audio will not play unless a user interacts with the screen. Perhaps, add a "Click to Start" screen before starting the experiment.
-
-
-
-                                // // /* PPlay the relevant audio */
-                                // var audio = new Audio("../audio/open_chest.mp3");
-                                // const currentDir = __dirname;
-                                // console.log(currentDir);
-                                // console.log(audio);
-                                // audio.play();
-
-
-                                // And hide the coin after reaching final position
-                                // setTimeout(() => {
-                                //     coin.classList.add('hidden');
-                                // }, 1200);
-                                setTimeout(() => {
-                                    for (var top of chest_top) {
-                                        top.style.zIndex = "6";
+                                    /* Removing coin-place-2 will return coin to its original (aka final) position */
+                                    for (var prize of prizes) {
+                                        prize.classList.remove(prize_place_positions[2]);
                                     }
-                                }, 600);
-
-
-                                setTimeout(() => {
-
-
-                                    for (var top of chest_top) {
-                                        top.classList.remove('open_chest_simple_animation');
-                                        top.classList.add('close_chest_simple_animation');
-                                    }
-                                    if (PLAY_AUDIO) {
-                                        new Audio("../audio/open_chest_creak.mp3").play().catch((error) => {
-                                            console.error("Audio playback failed:", error);
-                                        });
-                                    }
-                                    // Pull occluders up out of screen
                                     setTimeout(() => {
-                                        for (var occluder of occluders) {
-                                            occluder.classList.add('occluder-place-reset');
-                                            occluder.style.transition = "all 2s ease-in-out";
+                                        new Audio("../audio/coin_placement.wav").play();
+
+                                    }, 700);
+
+                                    setTimeout(() => {
+                                        for (var top of chest_top) {
+                                            top.style.zIndex = "6";
                                         }
+                                    }, 600);
 
-                                        // Submit to kesar
-                                        window.setTimeout(function () {
-                                            SUBMITTING = true; // Kesar global variable
-                                            document.querySelector('form').submit();
-                                        }, 1800);
-                                    }, occluder_timeout);
-                                }, 1200);
 
-                            }, 800);
+                                    setTimeout(() => {
+
+                                        var occluder_remove_timeout = (occluders.length > 0) ? 1200 : 1;
+                                        for (var top of chest_top) {
+                                            top.classList.remove('open_chest_simple_animation');
+                                            top.classList.add('close_chest_simple_animation');
+                                        }
+                                        if (PLAY_AUDIO) {
+                                            new Audio("../audio/open_chest_creak.mp3").play().catch((error) => {
+                                                console.error("Audio playback failed:", error);
+                                            });
+                                        }
+                                        // Pull occluders up out of screen
+                                        setTimeout(() => {
+                                            for (var occluder of occluders) {
+                                                occluder.classList.add('occluder-place-reset');
+                                                occluder.style.transition = "all 2s ease-in-out";
+                                            }
+
+                                            var num_stages = document.getElementById("num_stages").innerText;
+
+                                            if (first_trial == "True" && num_stages == "1") {
+                                                add_script("prompt_click.wav", 2000);
+                                            } else {
+                                                add_script("which_open.wav", 2000);
+                                            }
+
+
+                                            // Submit to kesar
+                                            window.setTimeout(function () {
+                                                SUBMITTING = true; // Kesar global variable
+                                                document.querySelector('form').submit();
+                                            }, 5500);
+                                        }, occluder_remove_timeout);
+                                    }, 1500);
+
+                                }, 800);
+                            }, 3000);
 
                         }, occluder_timeout);
                         // }, occluder_timeout);
                     }, 1000);
-                }, 500);
+                }, 6000);
             }, 2000);
 
         }, 1200);
@@ -618,6 +700,14 @@ function stage_2_animation() {
         obj.classList.remove('hidden');
     }
 
+    var play_hook_intro = document.getElementById("play_hook_intro").innerText;
+    if (play_hook_intro == "True") {
+        add_script("hook_comes.wav", 500);
+    } else {
+        add_script("here_comes_hook.wav", 500);
+    }
+    add_script(`hook_${prize_elements.length - 1}.wav`, 3500);
+
     setTimeout(() => {
         // Move prize in front of chest
         for (let i = 0; i < prize_elements.length; i++) {
@@ -634,20 +724,16 @@ function stage_2_animation() {
             hook.style.left = hook_posreset_x;
             hook.style.top = hook_posreset_y;
 
+            add_script("now_which_open.wav", 3500);
 
-            // for (var child of chest.children) {
 
-            //     child.style.left = `calc(${hook_posreset_x} - ${hook_pos2_x} + ${child.style.left})`;
-            //     child.style.top = `calc(${hook_posreset_y} - ${hook_pos2_y} + ${child.style.top})`;
-            // }
-            // Submit to kesar
             window.setTimeout(function () {
                 SUBMITTING = true; // Kesar global variable
                 document.querySelector('form').submit();
-            }, 2000);
+            }, 6000);
         }, 1200);
 
-    }, 1200);
+    }, 3500);
 }
 
 
@@ -873,17 +959,3 @@ function shiftPageInRight() {
         }
     }, 1100);
 }
-
-// // This function adds a new, null state to the history
-// // so the back button points to this dummy state.
-// function disableBackButton() {
-//     console.log("Disabling back button");
-//     for (var i = 0; i < 10; i++) {
-//         window.history.pushState(null, "", window.location.href);
-//     }
-//     // 2. Listen for the "Back" click (popstate)
-//     window.onpopstate = function () {
-//         // 3. When they click back, immediately push them forward again
-//         window.history.pushState(null, "", window.location.href);
-//     };
-// }
