@@ -131,17 +131,17 @@ class Trial:
                 name="initial_occluder", side="right", type="partial"
             ).get_html(additional_class="hidden")
             items.extend([flag_left, flag_right])
-        elif self.trial_info["stage_1"]["occluder"] == "one-side":
-            if self.first_prize_side == "left":
-                flag_left = Occluder(
-                    name="initial_occluder", side="left", type="partial"
-                ).get_html(additional_class="hidden")
-                items.append(flag_left)
-            else:
-                flag_right = Occluder(
-                    name="initial_occluder", side="right", type="partial"
-                ).get_html(additional_class="hidden")
-                items.append(flag_right)
+        # elif self.trial_info["stage_1"]["occluder"] == "one-side":
+        #     if self.first_prize_side == "left":
+        #         flag_left = Occluder(
+        #             name="initial_occluder", side="left", type="partial"
+        #         ).get_html(additional_class="hidden")
+        #         items.append(flag_left)
+        #     else:
+        #         flag_right = Occluder(
+        #             name="initial_occluder", side="right", type="partial"
+        #         ).get_html(additional_class="hidden")
+        #         items.append(flag_right)
         elif self.trial_info["stage_1"]["occluder"] == "":
             pass
         else:
@@ -311,7 +311,7 @@ class TestingTrial(Trial):
     ):
 
         if one_chest:
-            occluder_type = "one-side"
+            occluder_type = "partial"
         else:
             occluder_type = "full"
         trial_info = {
@@ -628,10 +628,10 @@ def experiment(uid):
     # Begin
     yield start_page()
 
-    yield from run_training_trial1(data)
-    yield from run_training_trial2(data)
-    yield from run_training_trial3(data)
-    yield from run_training_trial4(data)
+    # yield from run_training_trial1(data)
+    # yield from run_training_trial2(data)
+    # yield from run_training_trial3(data)
+    # yield from run_training_trial4(data)
     yield from run_testing_trial(data)
 
     return data

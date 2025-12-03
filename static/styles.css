@@ -84,7 +84,7 @@ body {
 
 @keyframes close_chest_simple {
     0% {
-        transform: translateY(-20vh)
+        transform: translateY(-25vh)
     }
 
     100% {
