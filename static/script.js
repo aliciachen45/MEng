@@ -118,6 +118,7 @@ async function animateOccludersEnter(occluders) {
     for (var occluder of occluders) {
         occluder.classList.remove('occluder-place-reset');
     }
+    await wait(1200);
 }
 
 /**
@@ -138,7 +139,11 @@ async function animateOccludersExit(occluders) {
  */
 async function animateCoinMove(prizes, positions) {
     // 1. "Watch this..."
-    await add_script('watch.wav', 500);
+    var trial_type = document.getElementById("trial_type").innerText;
+    if (trial_type != "testing") {
+
+        await add_script('watch.wav', 500);
+    }
 
     // 2. Move to Center Mid
     for (var prize of prizes) {
@@ -278,7 +283,11 @@ async function stage_1_animation() {
     // Close Bag
     await wait(500); // Short pause after coins drop
     bag.src = "/images/closed_bag.png";
-    await add_script(`${prizes.length - 1}_coins_in_bag.wav`);
+    if (first_trial == "True") {
+        await add_script(`${prizes.length - 1}_coins_in_bag.wav`);
+    } else {
+        await add_script(`bag_has_${prizes.length - 1}_coins.wav`);
+    }
 
     // --- Open Chest (Empty) ---
     await wait(500);
@@ -297,11 +306,9 @@ async function stage_1_animation() {
     // Flag Audio
     if (occluders.length > 0) {
         var play_flag_intro = document.getElementById("play_flag_intro").innerText;
-        var occluder_type = document.getElementById("occluder_type").innerText;
 
         if (play_flag_intro == "True") {
-            if (occluder_type == "full") await add_script("large_pirate_flags.wav", 500);
-            else if (occluder_type == "partial") await add_script("intro_flags.wav", 500);
+            await add_script("intro_flags.wav");
         }
     }
     await wait(500);
@@ -389,10 +396,9 @@ async function stage_2_animation() {
 
     // --- Hook Audio Sequence (Async) ---
     var play_hook_intro = document.getElementById("play_hook_intro").innerText;
+    console.log("Play hook intro", play_hook_intro);
     if (play_hook_intro == "True") {
-        await add_script("hook_comes.wav", 500);
-    } else {
-        await add_script("here_comes_hook.wav", 500);
+        await add_script("hook_comes.wav");
     }
 
 
@@ -413,7 +419,14 @@ async function stage_2_animation() {
     hook.style.left = hook_posreset_x;
     hook.style.top = hook_posreset_y;
 
-    await add_script(`hook_${prize_elements.length - 1}.wav`, 0);
+
+    await (1200);
+    if (play_hook_intro == "True") {
+        await add_script(`hook_${prize_elements.length - 1}.wav`);
+    } else {
+        await add_script(`hook_${prize_elements.length - 1}_short.wav`);
+    }
+
 
 
     // --- Prompt ---
@@ -787,6 +800,7 @@ function setMeterValue(amount) {
 
 document.addEventListener('DOMContentLoaded', () => {
     let stage = document.getElementById('stage_indicator').innerText;
+    let back_button_note = document.getElementById('backbutton_note');
     console.log("Current stage:", stage);
     if (stage == '1') stage_1_animation();
     else if (stage == '2') stage_2_animation();

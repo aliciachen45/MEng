@@ -36,7 +36,7 @@ Training types: 2 chest,
 
 class Trial:
     trial_num = 1
-    play_flag_intro = {"full": True, "partial": True}
+    play_flag_intro = True
     play_hook_intro = True
 
     def __init__(self, trial_info, prize_side=None):
@@ -71,17 +71,17 @@ class Trial:
 
         items.append(div_(id="max_coins", class_="variable")(self.max_coins))
 
-        play_occluder = Trial.play_flag_intro.get(self.occluder_type, "")
         items.append(
-            div_(id="play_flag_intro", class_="variable")(play_occluder)
+            div_(id="play_flag_intro", class_="variable")(Trial.play_flag_intro)
         )
-        if play_occluder:
-            Trial.play_flag_intro[self.occluder_type] = False
+
+        if Trial.play_flag_intro:
+            Trial.play_flag_intro = False
 
         items.append(
             div_(id="play_hook_intro", class_="variable")(Trial.play_hook_intro)
         )
-        if Trial.play_hook_intro:
+        if curr_stage == 2 and Trial.play_hook_intro:
             Trial.play_hook_intro = False
 
         items.append(SCORE.get_html())
@@ -131,17 +131,6 @@ class Trial:
                 name="initial_occluder", side="right", type="partial"
             ).get_html(additional_class="hidden")
             items.extend([flag_left, flag_right])
-        # elif self.trial_info["stage_1"]["occluder"] == "one-side":
-        #     if self.first_prize_side == "left":
-        #         flag_left = Occluder(
-        #             name="initial_occluder", side="left", type="partial"
-        #         ).get_html(additional_class="hidden")
-        #         items.append(flag_left)
-        #     else:
-        #         flag_right = Occluder(
-        #             name="initial_occluder", side="right", type="partial"
-        #         ).get_html(additional_class="hidden")
-        #         items.append(flag_right)
         elif self.trial_info["stage_1"]["occluder"] == "":
             pass
         else:
@@ -339,18 +328,17 @@ def start_page():
 
 # def run_onestagetraining(trial_num):
 def run_training_trial1(data):
-    trial_num = 0
-
+    possible_coins = [2, 4, 1]
     # One stage training trial with no occluders
 
     while True:
-        print("Starting trial num: ", trial_num)
         trial = OneStageTrainingTrial(stage1_coins=4)
+        print("Starting trial num: ", trial.trial_num)
 
         all_pages = trial.get_stage1().copy()
         correct_side = trial.first_prize_side
         trial_data = {
-            "trial_number": trial_num + 1,
+            "trial_number": trial.trial_num,
             "prize_side": correct_side,
         }
 
@@ -360,14 +348,13 @@ def run_training_trial1(data):
         print("Recieved_response:", choice)
         trial_data["Stage 1 Choice"] = choice
 
-        data[trial_num] = trial_data
+        data[trial.trial_num] = trial_data
 
         if choice["clicked_side"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
 
-        trial_num += 1
         if (
             trial_data["Stage 1 Choice"]["clicked_side"][0]
             == trial_data["prize_side"]
@@ -376,17 +363,17 @@ def run_training_trial1(data):
 
 
 def run_training_trial2(data):
-    trial_num = 0
+    possible_coins = [1, 4, 2]
     # One stage training tiral w/occluders:
 
     while True:
-        print("Starting trial num: ", trial_num)
         trial = OneStageTrainingTrial(stage1_coins=1, occluded="partial")
+        print("Starting trial num: ", trial.trial_num)
 
         all_pages = trial.get_stage1().copy()
         correct_side = trial.first_prize_side
         trial_data = {
-            "trial_number": trial_num + 1,
+            "trial_number": trial.trial_num,
             "prize_side": correct_side,
         }
 
@@ -396,14 +383,13 @@ def run_training_trial2(data):
         print("Recieved_response:", choice)
         trial_data["Stage 1 Choice"] = choice
 
-        data[trial_num] = trial_data
+        data[trial.trial_num] = trial_data
 
         if choice["clicked_side"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
 
-        trial_num += 1
         if (
             trial_data["Stage 1 Choice"]["clicked_side"][0]
             == trial_data["prize_side"]
@@ -412,21 +398,25 @@ def run_training_trial2(data):
 
 
 def run_training_trial3(data):
-    trial_num = 0
+    possible_combos = [
+        (4, 1),
+        (4, 2),
+        (2, 1),
+    ]
 
     # Two stage training trial, correct choice is chest
     while True:
-        print("Starting trial num: ", trial_num)
         trial = TwoStageTrainingTrial(
             stage1_coins=4,
             stage2_coins=2,
             occluded="partial",
         )
+        print("Starting trial num: ", trial.trial_num)
 
         stage1_pages = trial.get_stage1().copy()
         correct_side = trial.first_prize_side
         trial_data = {
-            "trial_number": trial_num + 1,
+            "trial_number": trial.trial_num,
             "prize_side": correct_side,
         }
 
@@ -460,8 +450,7 @@ def run_training_trial3(data):
         SCORE.score += coin_amount
         METER.curr_score = SCORE.score
 
-        data[trial_num] = trial_data
-        trial_num += 1
+        data[trial.trial_num] = trial_data
         if (
             trial.trial_info["stage_2"]["prize_coins"]
             > trial.trial_info["stage_1"]["prize_coins"]
@@ -474,8 +463,6 @@ def run_training_trial3(data):
 
 
 def run_training_trial4(data):
-    trial_num = 0
-
     possible_combos = [
         (1, 4),
         (2, 4),
@@ -483,17 +470,17 @@ def run_training_trial4(data):
     ]
     # Two stage training trial, correct choice is bag
     while True:
-        print("Starting trial num: ", trial_num)
         trial = TwoStageTrainingTrial(
             stage1_coins=1,
             stage2_coins=4,
             occluded="partial",
         )
+        print("Starting trial num: ", trial.trial_num)
 
         stage1_pages = trial.get_stage1().copy()
         correct_side = trial.first_prize_side
         trial_data = {
-            "trial_number": trial_num + 1,
+            "trial_number": trial.trial_num,
             "prize_side": correct_side,
         }
 
@@ -527,8 +514,7 @@ def run_training_trial4(data):
         SCORE.score += coin_amount
         METER.curr_score = SCORE.score
 
-        data[trial_num] = trial_data
-        trial_num += 1
+        data[trial.trial_num] = trial_data
         if (
             trial.trial_info["stage_2"]["prize_coins"]
             > trial.trial_info["stage_1"]["prize_coins"]
@@ -541,8 +527,6 @@ def run_training_trial4(data):
 
 
 def run_testing_trial(data):
-    trial_num = 0
-
     num_testing_trials = 1
 
     test_trials = [
@@ -569,18 +553,17 @@ def run_testing_trial(data):
     ]
     for _ in range(num_testing_trials):
         for trial_info in test_trials:
-
-            print("Starting trial num: ", trial_num)
             trial = TestingTrial(
                 stage1_coins=trial_info["stage1_coins"],
                 stage2_coins=trial_info["stage2_coins"],
                 one_chest=trial_info["one_chest"],
             )
+            print("Starting trial num: ", trial.trial_num)
 
             stage1_pages = trial.get_stage1().copy()
             correct_side = trial.first_prize_side
             trial_data = {
-                "trial_number": trial_num + 1,
+                "trial_number": trial.trial_num,
                 "prize_side": correct_side,
             }
 
@@ -611,8 +594,7 @@ def run_testing_trial(data):
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
 
-            data[trial_num] = trial_data
-            trial_num += 1
+            data[trial.trial_num] = trial_data
 
 
 @kesar
@@ -622,7 +604,7 @@ def experiment(uid):
     METER.curr_score = SCORE.score
     data = {"uid": uid}
     Trial.trial_num = 1  # reset trial numbering
-    Trial.play_flag_intro = {"full": True, "partial": True}
+    Trial.play_flag_intro = True
     Trial.play_hook_intro = True
 
     # Begin

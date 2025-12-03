@@ -363,51 +363,33 @@ TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
 */
 
 .prize-place-left-reset {
-    /* left: 47vw !important;
-    top: -15vh !important;
-    opacity: 1; */
     transform: translateY(-100vh) translateX(25vw) !important;
-
 }
 
 /* Top mid*/
 .prize-place-left-1 {
-    /* left: 47vw !important;
-    top: 10vh !important; */
-    transform: translateY(-50vh) translateX(25vw) !important;
+    transform: translateY(-40vh) translateX(25vw) !important;
     visibility: visible;
-
 }
 
 /* Center mid*/
 .prize-place-left-2 {
-    /* left: 47vw !important;
-    top: 50vh !important; */
     visibility: visible;
     transform: translateY(-10vh) translateX(25vw) !important;
 }
 
 .prize-place-right-reset {
-    /* left: 47vw !important;
-    top: -15vh !important;
-    opacity: 1; */
     transform: translateY(-100vh) translateX(-25vw) !important;
-
 }
 
 /* Top mid*/
 .prize-place-right-1 {
-    /* left: 47vw !important;
-    top: 10vh !important; */
-    transform: translateY(-50vh) translateX(-25vw) !important;
+    transform: translateY(-40vh) translateX(-25vw) !important;
     visibility: visible;
-
 }
 
 /* Center mid*/
 .prize-place-right-2 {
-    /* left: 47vw !important;
-    top: 50vh !important; */
     visibility: visible;
     transform: translateY(-10vh) translateX(-25vw) !important;
 }
