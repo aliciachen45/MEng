@@ -15,22 +15,20 @@ class ScoreDisplay:
 
 
 class Object:
-    def __init__(self, name="", clickable=False):
+    def __init__(self, name=""):
         self.name = name
-        self.clickable = clickable
 
     def get_html(self):
         raise NotImplementedError("Subclasses must implement get_html method.")
 
 
 class ChestShell(Object):
-    def __init__(self, name="", side="left", clickable=False):
-        super().__init__(name=name, clickable=clickable)
+    def __init__(self, name="", side="left"):
+        super().__init__(name=name)
         self.side = side
 
     def get_html(self, additional_style=""):
-        if self.clickable:
-            additional_style += " cursor: pointer;"
+        additional_style += " cursor: pointer;"
 
         items = [
             img_(
@@ -56,12 +54,11 @@ class Chest(Object):
         self,
         name="",
         side="left",
-        clickable=False,
         prize_class=None,
         prize=None,
         onclick_fn=None,
     ):
-        super().__init__(name=name, clickable=clickable)
+        super().__init__(name=name)
         self.side = side
         self.onclick_fn = onclick_fn
         if not prize:
@@ -75,9 +72,9 @@ class Chest(Object):
             self.prize = prize
 
     def get_html(self, additional_style=""):
-        items = ChestShell(
-            name=self.name, side=self.side, clickable=self.clickable
-        ).get_html(additional_style=additional_style)
+        items = ChestShell(name=self.name, side=self.side).get_html(
+            additional_style=additional_style
+        )
 
         if self.prize:
             items.append(self.prize.get_html(additional_style=additional_style))
@@ -90,13 +87,13 @@ class Chest(Object):
         return div_(
             id=f"chest_container_{self.side}",
             style=f"display: flex; justify-content: flex-start;",
-            onClick=f"{self.onclick_fn}(this);" if self.clickable else "",
+            onClick=f"{self.onclick_fn}(this);",
         )(*items)
 
 
 class Coin(Object):
-    def __init__(self, name="", side="left", clickable=False, x=None, y=None):
-        super().__init__(name=name, clickable=clickable)
+    def __init__(self, name="", side="left", x=None, y=None):
+        super().__init__(name=name)
         self.side = side
         self.width = DEFAULT_COIN_WIDTH
         if x:
@@ -119,8 +116,7 @@ class Coin(Object):
             class_=f"prize {additional_class}",
             src="images/coin.png",
             alt="Coin",
-            onClick=f"{self.onclick_fn}(this);" if self.clickable else "",
-            style=f"width: {self.width}; top: {self.y}; left: {self.x}; {additional_style}; {'cursor: pointer;' if self.clickable else ''}",
+            style=f"width: {self.width}; top: {self.y}; left: {self.x}; {additional_style}; {'cursor: pointer;'}",
         )
 
 
@@ -174,14 +170,19 @@ class Occluder(Object):
 
 
 class Prize(Object):
-    def __init__(self, name="", clickable=False, prize_info={}):
-        super().__init__(name=name, clickable=clickable)
+    def __init__(self, name="", prize_info={}):
+        super().__init__(name=name)
         self.info = prize_info
 
 
 class Bag(Prize):
-    def __init__(self, name="", side="left", open=True, clickable=False):
-        super().__init__(name=name, clickable=clickable, prize_info=BAG_INFO)
+    def __init__(
+        self,
+        name="",
+        side="left",
+        open=True,
+    ):
+        super().__init__(name=name, prize_info=BAG_INFO)
         self.side = side
         self.open = open
         self.onclick_fn = "revealCoinsAndBag"
@@ -212,9 +213,8 @@ class FilledBag(Bag):
         side="left",
         open: bool = False,
         num_coins: int = 1,
-        clickable=False,
     ):
-        super().__init__(name=name, side=side, open=open, clickable=clickable)
+        super().__init__(name=name, side=side, open=open)
         self.num_coins = num_coins
         if self.num_coins not in [1, 2, 4]:
             raise ValueError("num_coins must be 1, 2, or 4")
@@ -247,8 +247,8 @@ class FilledBag(Bag):
         return div_(
             id=f"{self.name}_bag",
             class_=f"bag_container",
-            onClick=f"{self.onclick_fn}(this);" if self.clickable else "",
-            style=f"display: flex; justify-content: flex-start; {'cursor: pointer;' if self.clickable else ''}",
+            onClick=f"{self.onclick_fn}(this);",
+            style=f"display: flex; justify-content: flex-start; {'cursor: pointer;'}",
         )(*items)
 
     def get_coin_arrangements(self):
@@ -337,7 +337,9 @@ class PrizeWithHook(Object):
             top=hook_y,
         ).get_html(additional_class="hidden")
 
-        return div_(id=f"prize_with_hook_container")(prize_html, hook)
+        return div_(id=f"prize_with_hook_container_{self.side}")(
+            prize_html, hook
+        )
 
 
 class ScoreMeter:

@@ -208,7 +208,7 @@ def page(uid, *contents, **kwargs):
         form_(action="", method="POST", autocomplete="off")(
             *contents,
             input_(type_="hidden", name="uid", value=uid),
-            p_()(
+            p_(id="backbutton_note")(
                 em_()('Note: do not press the "back" button during this study.')
             ),
         ),

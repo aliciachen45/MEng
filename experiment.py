@@ -38,12 +38,17 @@ class Trial:
     trial_num = 1
     play_flag_intro = True
     play_hook_intro = True
+    trigger_highlight = True
 
     def __init__(self, trial_info, prize_side=None):
         # trial_info: {stage 1: {include: True/False, prize_coins: int}, stage 2: {include: True/False, prize_coins: int}}
         # self.occluded = occluded
         self.trial_info = trial_info
-        self.first_prize_side = prize_side
+
+        if not prize_side:
+            self.first_prize_side = random.choice(["left", "right"])
+        else:
+            self.first_prize_side = prize_side
         self.num_stages = 2 if trial_info["stage_2"]["include"] else 1
         self.trial_type = ""
         self.trial_num = Trial.trial_num
@@ -55,6 +60,8 @@ class Trial:
         )
 
     def _prep_experiment_page(self, items, curr_stage):
+        items.append(div_(id="processing-overlay")(""))
+
         items.append(div_(id="REMOVE")(self.trial_info))
 
         items.append(div_(id="stage_indicator", class_="variable")(curr_stage))
@@ -71,11 +78,20 @@ class Trial:
 
         items.append(div_(id="max_coins", class_="variable")(self.max_coins))
 
+        # items.append(
+        #     div_(id="trigger_highlight", class_="variable")(
+        #         Trial.trigger_highlight
+        #     )
+        # )
+
         items.append(
             div_(id="play_flag_intro", class_="variable")(Trial.play_flag_intro)
         )
 
-        if Trial.play_flag_intro:
+        if Trial.trigger_highlight:
+            items.append(div_(id="score_highlight")(""))
+
+        if Trial.play_flag_intro and self.occluder_type != "":
             Trial.play_flag_intro = False
 
         items.append(
@@ -98,11 +114,23 @@ class Trial:
         self.left = Chest(side="left")
         self.right = Chest(side="right")
 
+        onclick_fn = (
+            "selectChest"
+            if self.trial_info["stage_2"]["include"]
+            else "openChest"
+        )
+
+        self.left.onclick_fn = onclick_fn
+        self.right.onclick_fn = onclick_fn
+
+        # prize_bag.open = False
+        # if self.first_prize_side == "left":
+        #     self.left.prize = prize_bag
+        # else:
+        #     self.right.prize = prize_bag
+
         items.append(self.left.get_html())
         items.append(self.right.get_html())
-
-        if not self.first_prize_side:
-            self.first_prize_side = random.choice(["left", "right"])
 
         prize_bag = FilledBag(
             name=f"prize_{self.first_prize_side}",
@@ -140,34 +168,16 @@ class Trial:
                 )
             )
 
-        animation_page = self._prep_experiment_page(items, curr_stage=1)
-        pages.append(animation_page)
+        # pages.append(animation_page)
 
         # page 2: ask for choice
-        items = []
+        # items = []
 
         # setting onclick fn depending on whether stage 2 is included
-        onclick_fn = (
-            "selectChest"
-            if self.trial_info["stage_2"]["include"]
-            else "openChest"
-        )
-
-        self.left.clickable = True
-        self.right.clickable = True
-
-        self.left.onclick_fn = onclick_fn
-        self.right.onclick_fn = onclick_fn
 
         # assigning prize to chest
 
-        prize_bag.open = False
-        if self.first_prize_side == "left":
-            self.left.prize = prize_bag
-        else:
-            self.right.prize = prize_bag
-
-        items.extend([self.left.get_html(), self.right.get_html()])
+        # items.extend([self.left.get_html(), self.right.get_html()])
 
         # hidden input to record choice
         hidden_input = input_(
@@ -177,26 +187,46 @@ class Trial:
         )
         items.append(hidden_input)
 
-        choice_page = self._prep_experiment_page(items, curr_stage=0)
+        choice_page = self._prep_experiment_page(items, curr_stage=1)
+        # animation_page = self._prep_experiment_page(items, curr_stage=1)
 
         pages.append(choice_page)
 
         return pages
 
     def get_stage2(self, keep_side):
-        print("Generating stage 2 pages for chosen side:", keep_side)
-        if not self.trial_info["stage_2"]["include"]:
-            return []
-
-        replace_side = "right" if keep_side == "left" else "left"
-
         pages = []
 
         # page 1: animation of hook
         items = []
+        print("Generating stage 2 pages for chosen side:", keep_side)
+        if not self.trial_info["stage_2"]["include"]:
+            return []
 
+        if keep_side == "left":
+            self.left.onclick_fn = "openChest"
+            if self.first_prize_side == "left":
+                first_prize = FilledBag(
+                    name=f"prize_{self.first_prize_side}",
+                    side=self.first_prize_side,
+                    open=False,
+                    num_coins=self.trial_info["stage_1"]["prize_coins"],
+                )
+                self.left.prize = first_prize
+        else:
+            self.right.onclick_fn = "openChest"
+            if self.first_prize_side == "right":
+                first_prize = FilledBag(
+                    name=f"prize_{self.first_prize_side}",
+                    side=self.first_prize_side,
+                    open=False,
+                    num_coins=self.trial_info["stage_1"]["prize_coins"],
+                )
+                self.right.prize = first_prize
+
+        replace_side = "right" if keep_side == "left" else "left"
         kept_chest = self.left if keep_side == "left" else self.right
-        kept_chest.clickable = False  # Disable clicking on kept chest
+
         items.append(kept_chest.get_html())
 
         # declaring the new prize
@@ -204,7 +234,6 @@ class Trial:
             name=f"hooked_prize_{replace_side}",
             side=replace_side,
             open=False,
-            clickable=False,
             num_coins=self.trial_info["stage_2"]["prize_coins"],
         )
 
@@ -218,22 +247,15 @@ class Trial:
         items.append(PWH_object.get_html())
         # items.append(chest_with_hook_(side=replace_side))
 
-        animation_page = self._prep_experiment_page(items, curr_stage=2)
-        pages.append(animation_page)
+        # animation_page = self._prep_experiment_page(items, curr_stage=2)
+        # pages.append(animation_page)
 
         # page 2
-        items = []
-
-        self.left.clickable = True
-        self.right.clickable = True
+        # items = []
 
         # changing the chest onclick function to open
-        if keep_side == "left":
-            self.left.onclick_fn = "openChest"
-        else:
-            self.right.onclick_fn = "openChest"
 
-        items.extend([self.left.get_html(), self.right.get_html()])
+        # items.extend([self.left.get_html(), self.right.get_html()])
 
         # hidden input to record choice
         hidden_input = input_(
@@ -243,7 +265,7 @@ class Trial:
         )
         items.append(hidden_input)
 
-        choice_page = self._prep_experiment_page(items, curr_stage=0)
+        choice_page = self._prep_experiment_page(items, curr_stage=2)
 
         pages.append(choice_page)
 
@@ -332,7 +354,8 @@ def run_training_trial1(data):
     # One stage training trial with no occluders
 
     while True:
-        trial = OneStageTrainingTrial(stage1_coins=4)
+        n = 4
+        trial = OneStageTrainingTrial(stage1_coins=n)
         print("Starting trial num: ", trial.trial_num)
 
         all_pages = trial.get_stage1().copy()
@@ -340,13 +363,14 @@ def run_training_trial1(data):
         trial_data = {
             "trial_number": trial.trial_num,
             "prize_side": correct_side,
+            "coins1": n,
         }
 
-        yield all_pages[0]
+        # yield all_pages[0]
 
-        choice = yield all_pages[1]
+        choice = yield all_pages[0]
         print("Recieved_response:", choice)
-        trial_data["Stage 1 Choice"] = choice
+        trial_data["choice1"] = choice
 
         data[trial.trial_num] = trial_data
 
@@ -355,10 +379,8 @@ def run_training_trial1(data):
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
 
-        if (
-            trial_data["Stage 1 Choice"]["clicked_side"][0]
-            == trial_data["prize_side"]
-        ):
+        if trial_data["choice1"]["clicked_side"][0] == trial_data["prize_side"]:
+            Trial.trigger_highlight = False
             break
 
 
@@ -367,7 +389,8 @@ def run_training_trial2(data):
     # One stage training tiral w/occluders:
 
     while True:
-        trial = OneStageTrainingTrial(stage1_coins=1, occluded="partial")
+        n = 1
+        trial = OneStageTrainingTrial(stage1_coins=n, occluded="partial")
         print("Starting trial num: ", trial.trial_num)
 
         all_pages = trial.get_stage1().copy()
@@ -375,13 +398,14 @@ def run_training_trial2(data):
         trial_data = {
             "trial_number": trial.trial_num,
             "prize_side": correct_side,
+            "coins1": n,
         }
 
-        yield all_pages[0]
+        # yield all_pages[0]
 
-        choice = yield all_pages[1]
+        choice = yield all_pages[0]
         print("Recieved_response:", choice)
-        trial_data["Stage 1 Choice"] = choice
+        trial_data["choice1"] = choice
 
         data[trial.trial_num] = trial_data
 
@@ -390,25 +414,23 @@ def run_training_trial2(data):
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
 
-        if (
-            trial_data["Stage 1 Choice"]["clicked_side"][0]
-            == trial_data["prize_side"]
-        ):
+        if trial_data["choice1"]["clicked_side"][0] == trial_data["prize_side"]:
             break
 
 
 def run_training_trial3(data):
     possible_combos = [
         (4, 1),
-        (4, 2),
         (2, 1),
+        (4, 2),
     ]
 
     # Two stage training trial, correct choice is chest
     while True:
+        n1, n2 = possible_combos[0]
         trial = TwoStageTrainingTrial(
-            stage1_coins=4,
-            stage2_coins=2,
+            stage1_coins=n1,
+            stage2_coins=n2,
             occluded="partial",
         )
         print("Starting trial num: ", trial.trial_num)
@@ -418,23 +440,25 @@ def run_training_trial3(data):
         trial_data = {
             "trial_number": trial.trial_num,
             "prize_side": correct_side,
+            "coins1": n1,
+            "coins2": n2,
         }
 
-        yield stage1_pages[0]
+        # yield stage1_pages[0]
 
-        first_response = yield stage1_pages[1]
+        first_response = yield stage1_pages[0]
         first_choice = first_response["clicked_side"][0]
         print("Recieved_response:", first_choice)
-        trial_data["Stage 1 Choice"] = first_response
+        trial_data["choice1"] = first_response
 
         # Stage 2 pages
         stage2_pages = trial.get_stage2(keep_side=first_choice)
 
-        yield stage2_pages[0]
+        # yield stage2_pages[0]
 
-        second_response = yield stage2_pages[1]
+        second_response = yield stage2_pages[0]
         second_choice = second_response["clicked_side"][0]
-        trial_data["Stage 2 Choice"] = second_response
+        trial_data["choice2"] = second_response
 
         if second_choice != first_choice:
             print(
@@ -464,15 +488,16 @@ def run_training_trial3(data):
 
 def run_training_trial4(data):
     possible_combos = [
+        (1, 2),
         (1, 4),
         (2, 4),
-        (1, 2),
     ]
     # Two stage training trial, correct choice is bag
     while True:
+        n1, n2 = possible_combos[0]
         trial = TwoStageTrainingTrial(
-            stage1_coins=1,
-            stage2_coins=4,
+            stage1_coins=n1,
+            stage2_coins=n2,
             occluded="partial",
         )
         print("Starting trial num: ", trial.trial_num)
@@ -482,23 +507,25 @@ def run_training_trial4(data):
         trial_data = {
             "trial_number": trial.trial_num,
             "prize_side": correct_side,
+            "coins1": n1,
+            "coins2": n2,
         }
 
-        yield stage1_pages[0]
+        # yield stage1_pages[0]
 
-        first_response = yield stage1_pages[1]
+        first_response = yield stage1_pages[0]
         first_choice = first_response["clicked_side"][0]
         print("Recieved_response:", first_choice)
-        trial_data["Stage 1 Choice"] = first_response
+        trial_data["choice1"] = first_response
 
         # Stage 2 pages
         stage2_pages = trial.get_stage2(keep_side=first_choice)
 
-        yield stage2_pages[0]
+        # yield stage2_pages[0]
 
-        second_response = yield stage2_pages[1]
+        second_response = yield stage2_pages[0]
         second_choice = second_response["clicked_side"][0]
-        trial_data["Stage 2 Choice"] = second_response
+        trial_data["choice2"] = second_response
 
         if second_choice != first_choice:
             print(
@@ -565,23 +592,25 @@ def run_testing_trial(data):
             trial_data = {
                 "trial_number": trial.trial_num,
                 "prize_side": correct_side,
+                "coins1": trial_info["stage1_coins"],
+                "coins2": trial_info["stage2_coins"],
             }
 
-            yield stage1_pages[0]
+            # yield stage1_pages[0]
 
-            first_response = yield stage1_pages[1]
+            first_response = yield stage1_pages[0]
             first_choice = first_response["clicked_side"][0]
             print("Recieved_response:", first_choice)
-            trial_data["Stage 1 Choice"] = first_response
+            trial_data["choice1"] = first_response
 
             # Stage 2 pages
             stage2_pages = trial.get_stage2(keep_side=first_choice)
 
-            yield stage2_pages[0]
+            # yield stage2_pages[0]
 
-            second_response = yield stage2_pages[1]
+            second_response = yield stage2_pages[0]
             second_choice = second_response["clicked_side"][0]
-            trial_data["Stage 2 Choice"] = second_response
+            trial_data["choice2"] = second_response
 
             if second_choice != first_choice:
                 print(
@@ -606,14 +635,15 @@ def experiment(uid):
     Trial.trial_num = 1  # reset trial numbering
     Trial.play_flag_intro = True
     Trial.play_hook_intro = True
+    Trial.trigger_highlight = True
 
     # Begin
     yield start_page()
 
-    # yield from run_training_trial1(data)
+    yield from run_training_trial1(data)
     # yield from run_training_trial2(data)
-    # yield from run_training_trial3(data)
-    # yield from run_training_trial4(data)
+    yield from run_training_trial3(data)
+    yield from run_training_trial4(data)
     yield from run_testing_trial(data)
 
     return data

@@ -32,6 +32,11 @@ async function add_script(audio_src, delay = 0) {
 
 // --- Animation Components (Async) ---
 
+
+function triggerOval() {
+    const highlight = document.getElementById('score_highlight');
+    highlight.classList.add('oval-highlight-animation');
+}
 /**
  * Handles the page sliding in from the right.
  * Resolves when the animation is fully complete and cleanup is done.
@@ -70,15 +75,27 @@ async function shiftPageInRight() {
  * Handles the page sliding out to the left.
  */
 async function shiftPageOutLeft() {
-    const experiment_doc = document.getElementById("experiment_screen");
-    const allElements = [...experiment_doc.querySelectorAll('*')];
 
-    for (var child of allElements) {
-        if (!child.classList.contains('keep_between_trials')) {
-            child.classList.add('shift_out_left_animation');
+    experiment_doc = document.getElementById("experiment_screen");
+    console.log("Shifting experiment screen out left:", experiment_doc);
+    for (var child of experiment_doc.children) {
+        console.log("Shifting child out left:", child);
+        if (child.classList.contains('keep_between_trials')) {
+            console.log("Keeping element in place between trials:", child);
+            // Do nothing, keep in place
+        } else {
+            if (child.children.length > 0) {
+                for (var grandchild of child.children) {
+
+                    grandchild.classList.add('shift_out_left_animation');
+                }
+            } else {
+                console.log("No grandchildren found for child:", child);
+                child.classList.add('shift_out_left_animation');
+
+            }
         }
     }
-    // Wait for the visual slide to complete before resolving
     await wait(1000);
 }
 
@@ -215,12 +232,14 @@ function recordChoice(choice) {
 }
 
 function showOverlay() {
-    const overlay = document.createElement('div');
-    overlay.id = 'processing-overlay';
-    Object.assign(overlay.style, {
-        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999
-    });
-    document.body.appendChild(overlay);
+    // const overlay = document.createElement('div');
+    // overlay.id = 'processing-overlay';
+    // Object.assign(overlay.style, {
+    //     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999
+    // });
+    // document.body.appendChild(overlay);
+    const overlay = document.getElementById('processing-overlay');
+    overlay.style.zIndex = 9999;
 }
 
 function removeObject(object) {
@@ -313,13 +332,18 @@ async function stage_1_animation() {
     }
     await wait(500);
 
+
+    setTimeout(() => {
+        for (var top of chest_top) {
+            top.style.zIndex = "6";
+        }
+    }, 3700);
     // --- Coin Magic Trick (Async) ---
     await animateCoinMove(prizes, prize_place_positions);
 
     // --- Close Chest ---
-    for (var top of chest_top) {
-        top.style.zIndex = "6";
-    }
+    // await wait(100);
+
     for (var top of chest_top) {
         top.classList.remove('open_chest_simple_animation');
         top.classList.add('close_chest_simple_animation');
@@ -340,8 +364,14 @@ async function stage_1_animation() {
     }
 
     // --- Submit ---
-    SUBMITTING = true;
-    document.querySelector('form').submit();
+    // SUBMITTING = true;
+    // document.querySelector('form').submit();
+
+    prize_chest_container = document.getElementById(`chest_container_${prize_side}`);
+    prize_chest_container.appendChild(bag_container[0]);
+
+    const overlay = document.getElementById('processing-overlay');
+    overlay.style.zIndex = -1;
 }
 
 /**
@@ -397,44 +427,63 @@ async function stage_2_animation() {
     // --- Hook Audio Sequence (Async) ---
     var play_hook_intro = document.getElementById("play_hook_intro").innerText;
     console.log("Play hook intro", play_hook_intro);
+
+
+
     if (play_hook_intro == "True") {
-        await add_script("hook_comes.wav");
-    }
+
+        setTimeout(async () => {
+            await add_script("hook_comes.wav");
+            await add_script(`hook_${prize_elements.length - 1}.wav`);
+            add_script("now_which_open.wav");
+
+        }, 0);
+        for (let i = 0; i < prize_elements.length; i++) {
+            prize_elements[i].style.left = original_prize_positions[i].left;
+            prize_elements[i].style.top = original_prize_positions[i].top;
+        }
 
 
+        // Visual: Hook is at chest
+        hook.style.left = hook_pos1_x;
+        hook.style.top = hook_pos1_y;
 
-    // Snap prizes to front of chest (Original Logic)
-    for (let i = 0; i < prize_elements.length; i++) {
-        prize_elements[i].style.left = original_prize_positions[i].left;
-        prize_elements[i].style.top = original_prize_positions[i].top;
-    }
+        // --- Retract Hook ---
+        await wait(1200);
+        hook.style.left = hook_posreset_x;
+        hook.style.top = hook_posreset_y;
 
-
-    // Visual: Hook is at chest
-    hook.style.left = hook_pos1_x;
-    hook.style.top = hook_pos1_y;
-
-    // --- Retract Hook ---
-    await wait(1200);
-    hook.style.left = hook_posreset_x;
-    hook.style.top = hook_posreset_y;
-
-
-    await (1200);
-    if (play_hook_intro == "True") {
-        await add_script(`hook_${prize_elements.length - 1}.wav`);
+        await wait(1200);
     } else {
+        for (let i = 0; i < prize_elements.length; i++) {
+            prize_elements[i].style.left = original_prize_positions[i].left;
+            prize_elements[i].style.top = original_prize_positions[i].top;
+        }
+
+
+        // Visual: Hook is at chest
+        hook.style.left = hook_pos1_x;
+        hook.style.top = hook_pos1_y;
+
+        // --- Retract Hook ---
+        await wait(1200);
+        hook.style.left = hook_posreset_x;
+        hook.style.top = hook_posreset_y;
+
         await add_script(`hook_${prize_elements.length - 1}_short.wav`);
+        add_script("now_which_open.wav");
+
     }
+    hook.classList.add('hidden');
 
 
-
-    // --- Prompt ---
-    await add_script("now_which_open.wav");
+    var hooked_prize_bag = document.getElementById(`hooked_prize_${position}_bag`);
+    var grandparent = hooked_prize_bag.parentElement.parentElement;
+    grandparent.appendChild(hooked_prize_bag);
 
     // --- Submit ---
-    SUBMITTING = true;
-    document.querySelector('form').submit();
+    const overlay = document.getElementById('processing-overlay');
+    overlay.style.zIndex = -1;
 }
 
 /**
@@ -506,12 +555,12 @@ async function coin_reveal_response(prize_bag_container) {
             if (num_stages == "2") {
                 await add_script("great_job.wav", 0);
             } else {
-                var first_trial = document.getElementById("first_trial").innerText;
-                if (first_trial == "True") {
-                    await add_script("great_job_watch.mp3", 0);
-                } else {
-                    await add_script("great_job_found.wav", 0);
-                }
+                // var first_trial = document.getElementById("first_trial").innerText;
+                // if (first_trial == "True") {
+                //     await add_script("great_job_watch.mp3", 0);
+                // } else {
+                await add_script("great_job_found.wav", 0);
+                // }
             }
         } else {
             await add_script("nice_try_again.wav", 0);
@@ -540,8 +589,14 @@ async function openChest(object) {
 
     // Remove non-chosen chest
     const non_chosen = choice == 'left' ? 'right' : 'left';
+
+
     Array.from(object.parentElement.children).forEach(sibling => {
-        if (sibling.id.includes(non_chosen)) removeObject(sibling);
+        if (sibling.id.includes(non_chosen)) {
+            // Async removal not strictly necessary here as we just want it gone
+            // but we can delay slightly to match pulse
+            removeObject(sibling)
+        }
     });
 
     // 1. Initial Wait
@@ -564,7 +619,7 @@ async function openChest(object) {
         await revealCoinsAndBag(prize_bag_container, false);
     } else {
         console.log("No prize for this chest");
-        await playAudio("../audio/open_chest_creak.mp3");
+        await playAudio("../audio/empty_chest1.mp3");
         await playAudio("../audio/empty_chest2.mp3");
     }
 
@@ -580,10 +635,10 @@ async function openChest(object) {
     setTimeout(() => chest_top.classList.remove('close_chest_simple_animation'), 500);
 
     // 7. Shift Page Out (Async)
-    await wait(1200);
+    await wait(1100);
     await shiftPageOutLeft();
 
-    // 8. Submit
+    // // 8. Submit
     SUBMITTING = true;
     document.querySelector('form').submit("hi");
 }
@@ -612,6 +667,9 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
         Array.from(bagContainerObj.parentElement.children).forEach(sibling => {
             if (sibling.id.includes(non_chosen)) removeObject(sibling);
         });
+        // Array.from(document.querySelectorAll('*')).forEach(element => {
+        //     if (element.id.includes(non_chosen)) removeObject(element);
+        // });
         await wait(800);
         recordChoice(choice);
     }
@@ -670,6 +728,13 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
     await wait(800);
 
     // Add animation for spiral into score
+    trigger_highlight = document.getElementById("score_highlight");
+    if (trigger_highlight != null) {
+        triggerOval();
+        await add_script("highlight.wav");
+    }
+
+
     for (let i = 0; i < coin_order.length; i++) {
         setTimeout(() => {
             prizeCoins[coin_order[i]].classList.remove('bounce_animation');
@@ -691,6 +756,7 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
     await wait(1200);
 
     if (submit) {
+        await shiftPageOutLeft();
         SUBMITTING = true;
         document.querySelector('form').submit();
     }
@@ -724,12 +790,12 @@ async function coin_reveal_response(prize_bag_container) {
             if (num_stages == "2") {
                 await add_script("great_job.wav", 0);
             } else {
-                var first_trial = document.getElementById("first_trial").innerText;
-                if (first_trial == "True") {
-                    await add_script("great_job_watch.mp3", 0);
-                } else {
-                    await add_script("great_job_found.wav", 0);
-                }
+                // var first_trial = document.getElementById("first_trial").innerText;
+                // if (first_trial == "True") {
+                //     await add_script("great_job_watch.mp3", 0);
+                // } else {
+                await add_script("great_job_found.wav", 0);
+                // }
             }
         } else {
             await add_script("nice_try_again.wav", 0);
@@ -802,6 +868,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let stage = document.getElementById('stage_indicator').innerText;
     let back_button_note = document.getElementById('backbutton_note');
     console.log("Current stage:", stage);
-    if (stage == '1') stage_1_animation();
-    else if (stage == '2') stage_2_animation();
+    if (stage == '1') {
+        back_button_note.classList.add('hidden');
+        stage_1_animation()
+    }
+    else if (stage == '2') {
+        back_button_note.classList.add('hidden');
+        stage_2_animation();
+    }
+
 });
