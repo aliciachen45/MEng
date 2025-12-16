@@ -447,7 +447,7 @@ Keyframe animations
 }
 
 .close_chest_simple_animation {
-    animation: close_chest_simple 0.5s ease-in-out forwards;
+    animation: close_chest_simple 0.8s ease-in-out forwards;
 }
 
 .swipe_up_animation {

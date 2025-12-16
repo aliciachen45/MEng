@@ -350,11 +350,11 @@ def start_page():
 
 # def run_onestagetraining(trial_num):
 def run_training_trial1(data):
-    possible_coins = [2, 4, 1]
+    possible_coins = [2]
     # One stage training trial with no occluders
 
     while True:
-        n = 4
+        n = possible_coins[0]
         trial = OneStageTrainingTrial(stage1_coins=n)
         print("Starting trial num: ", trial.trial_num)
 
@@ -385,11 +385,11 @@ def run_training_trial1(data):
 
 
 def run_training_trial2(data):
-    possible_coins = [1, 4, 2]
+    possible_coins = [1]
     # One stage training tiral w/occluders:
 
     while True:
-        n = 1
+        n = possible_coins[0]
         trial = OneStageTrainingTrial(stage1_coins=n, occluded="partial")
         print("Starting trial num: ", trial.trial_num)
 
@@ -420,8 +420,8 @@ def run_training_trial2(data):
 
 def run_training_trial3(data):
     possible_combos = [
-        (4, 1),
-        (2, 1),
+        # (4, 1),
+        # (2, 1),
         (4, 2),
     ]
 
@@ -475,22 +475,24 @@ def run_training_trial3(data):
         METER.curr_score = SCORE.score
 
         data[trial.trial_num] = trial_data
-        if (
-            trial.trial_info["stage_2"]["prize_coins"]
-            > trial.trial_info["stage_1"]["prize_coins"]
-        ):  # correct choice is to switch
-            if second_choice != trial.first_prize_side:
-                break
-        else:  # correct choice is to stay
-            if second_choice == trial.first_prize_side:
-                break
+        if coin_amount == trial.max_coins:
+            break
+        # if (
+        #     trial.trial_info["stage_2"]["prize_coins"]
+        #     > trial.trial_info["stage_1"]["prize_coins"]
+        # ):  # correct choice is to switch
+        #     if second_choice != trial.first_prize_side:
+        #         break
+        # else:  # correct choice is to stay
+        #     if second_choice == trial.first_prize_side:
+        #         break
 
 
 def run_training_trial4(data):
     possible_combos = [
-        (1, 2),
-        (1, 4),
-        (2, 4),
+        # (1, 2),
+        # (1, 4),
+        (2, 4)
     ]
     # Two stage training trial, correct choice is bag
     while True:
@@ -542,15 +544,18 @@ def run_training_trial4(data):
         METER.curr_score = SCORE.score
 
         data[trial.trial_num] = trial_data
-        if (
-            trial.trial_info["stage_2"]["prize_coins"]
-            > trial.trial_info["stage_1"]["prize_coins"]
-        ):  # correct choice is to switch
-            if second_choice != trial.first_prize_side:
-                break
-        else:  # correct choice is to stay
-            if second_choice == trial.first_prize_side:
-                break
+
+        if coin_amount == trial.max_coins:
+            break
+        # if (
+        #     trial.trial_info["stage_2"]["prize_coins"]
+        #     > trial.trial_info["stage_1"]["prize_coins"]
+        # ):  # correct choice is to switch
+        #     if second_choice != trial.first_prize_side:
+        #         break
+        # else:  # correct choice is to stay
+        #     if second_choice == trial.first_prize_side:
+        #         break
 
 
 def run_testing_trial(data):
@@ -562,16 +567,16 @@ def run_testing_trial(data):
             "stage2_coins": 1,
             "one_chest": True,
         },  # Equivalent to 1 cup trial, higher chest EV, No chest Uncertainty, OG
-        {
-            "stage1_coins": 4,
-            "stage2_coins": 1,
-            "one_chest": False,
-        },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
-        {
-            "stage1_coins": 2,
-            "stage2_coins": 1,
-            "one_chest": False,
-        },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
+        # {
+        #     "stage1_coins": 4,
+        #     "stage2_coins": 1,
+        #     "one_chest": False,
+        # },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
+        # {
+        #     "stage1_coins": 2,
+        #     "stage2_coins": 1,
+        #     "one_chest": False,
+        # },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
         # {
         #     "stage1_coins": 4,
         #     "stage2_coins": 2,
@@ -596,8 +601,6 @@ def run_testing_trial(data):
                 "coins2": trial_info["stage2_coins"],
             }
 
-            # yield stage1_pages[0]
-
             first_response = yield stage1_pages[0]
             first_choice = first_response["clicked_side"][0]
             print("Recieved_response:", first_choice)
@@ -605,8 +608,6 @@ def run_testing_trial(data):
 
             # Stage 2 pages
             stage2_pages = trial.get_stage2(keep_side=first_choice)
-
-            # yield stage2_pages[0]
 
             second_response = yield stage2_pages[0]
             second_choice = second_response["clicked_side"][0]
@@ -640,10 +641,10 @@ def experiment(uid):
     # Begin
     yield start_page()
 
-    yield from run_training_trial1(data)
+    # yield from run_training_trial1(data)
     # yield from run_training_trial2(data)
-    yield from run_training_trial3(data)
-    yield from run_training_trial4(data)
+    # yield from run_training_trial3(data)
+    # yield from run_training_trial4(data)
     yield from run_testing_trial(data)
 
     return data

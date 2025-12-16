@@ -158,7 +158,6 @@ async function animateCoinMove(prizes, positions) {
     // 1. "Watch this..."
     var trial_type = document.getElementById("trial_type").innerText;
     if (trial_type != "testing") {
-
         await add_script('watch.wav', 500);
     }
 
@@ -245,9 +244,9 @@ function showOverlay() {
 function removeObject(object) {
     const allElements = [object, ...object.querySelectorAll('*')];
     allElements.forEach(element => {
-        element.style.transition = "all 1s linear";
+        element.style.transition = "all 1.2s linear";
         requestAnimationFrame(() => {
-            element.style.top = `calc(${element.style.top} + -100vh)`;
+            element.style.top = `calc(${element.style.top} - 100vh)`;
         });
     });
 }
@@ -337,12 +336,14 @@ async function stage_1_animation() {
         for (var top of chest_top) {
             top.style.zIndex = "6";
         }
-    }, 3700);
+    }, 3500);
     // --- Coin Magic Trick (Async) ---
     await animateCoinMove(prizes, prize_place_positions);
-
+    for (var top of chest_top) {
+        top.style.zIndex = "6";
+    }
     // --- Close Chest ---
-    // await wait(100);
+    await wait(100);
 
     for (var top of chest_top) {
         top.classList.remove('open_chest_simple_animation');
@@ -437,7 +438,9 @@ async function stage_2_animation() {
             await add_script(`hook_${prize_elements.length - 1}.wav`);
             add_script("now_which_open.wav");
 
-        }, 0);
+        }, 300);
+
+        await (300);
         for (let i = 0; i < prize_elements.length; i++) {
             prize_elements[i].style.left = original_prize_positions[i].left;
             prize_elements[i].style.top = original_prize_positions[i].top;
@@ -455,6 +458,11 @@ async function stage_2_animation() {
 
         await wait(1200);
     } else {
+
+        setTimeout(async () => {
+            await add_script(`hook_${prize_elements.length - 1}_short.wav`);
+            await add_script("now_which_open.wav");
+        }, 300);
         for (let i = 0; i < prize_elements.length; i++) {
             prize_elements[i].style.left = original_prize_positions[i].left;
             prize_elements[i].style.top = original_prize_positions[i].top;
@@ -470,8 +478,8 @@ async function stage_2_animation() {
         hook.style.left = hook_posreset_x;
         hook.style.top = hook_posreset_y;
 
-        await add_script(`hook_${prize_elements.length - 1}_short.wav`);
-        add_script("now_which_open.wav");
+        await (1200);
+
 
     }
     hook.classList.add('hidden');
@@ -578,6 +586,8 @@ async function openChest(object) {
     const children = object.children;
     let chest_top = null;
     let prize_bag_container = null;
+    const trigger_highlight = document.getElementById("score_highlight");
+
 
     for (var child of children) {
         if (child.id.includes('chest_top_image')) chest_top = child;
@@ -626,16 +636,21 @@ async function openChest(object) {
     // Execution effectively PAUSES here until the voiceover is completely done
     await coin_reveal_response(prize_bag_container);
 
+
+    if (trigger_highlight != null && prize_bag_container != null) {
+        await add_script("try-many-coins.wav");
+    }
+
     // 6. Close Chest
     // Small buffer after talking stops
     await wait(500);
 
     chest_top.classList.remove('open_chest_rumble_animation');
     chest_top.classList.add('close_chest_simple_animation');
-    setTimeout(() => chest_top.classList.remove('close_chest_simple_animation'), 500);
+    setTimeout(() => chest_top.classList.remove('close_chest_simple_animation'), 800);
 
     // 7. Shift Page Out (Async)
-    await wait(1100);
+    await wait(1300);
     await shiftPageOutLeft();
 
     // // 8. Submit
@@ -750,7 +765,14 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
 
     if (submit) {
         await coin_reveal_response(bagContainerObj);
+        if (trigger_highlight != null) {
+            await add_script("try-many-coins.wav");
+        }
+        // await add_script("try-many-coins.wav");
     }
+
+
+
 
     prizeBag.classList.add('shift_out_up_animation');
     await wait(1200);
@@ -765,7 +787,7 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
 async function coin_reveal_response(prize_bag_container) {
     var trial_type = document.getElementById("trial_type").innerText;
     const num_coins_chosen = prize_bag_container ? prize_bag_container.children.length - 1 : 0;
-
+    const trigger_highlight = document.getElementById("score_highlight");
     console.log(`Response: Trial type ${trial_type}, Coins: ${num_coins_chosen}`);
 
     if (trial_type == "testing") {
@@ -785,17 +807,13 @@ async function coin_reveal_response(prize_bag_container) {
         if (num_coins_chosen == 0) {
             await add_script("lets_try_again.mp3", 0);
         } else if (num_coins_chosen == max_possible_coins) {
-            var num_stages = document.getElementById("num_stages").innerText;
+            // var num_stages = document.getElementById("num_stages").innerText;
 
-            if (num_stages == "2") {
-                await add_script("great_job.wav", 0);
+            if (trigger_highlight != null) {
+                await add_script("great_job_found.wav");
             } else {
-                // var first_trial = document.getElementById("first_trial").innerText;
-                // if (first_trial == "True") {
-                //     await add_script("great_job_watch.mp3", 0);
-                // } else {
-                await add_script("great_job_found.wav", 0);
-                // }
+                await add_script("great_job.wav");
+
             }
         } else {
             await add_script("nice_try_again.wav", 0);

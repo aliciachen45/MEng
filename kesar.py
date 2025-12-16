@@ -401,6 +401,7 @@ def kesar(
     remote_host=None,
     remote_port=None,
 ):
+    port = int(os.environ.get("PORT", port))
     print(f"** Hello! I am Kesar and the time is {time.ctime()}.")
     print("   You can learn more about me here: https://github.com/kach/kesar")
     sessions = {}
@@ -477,6 +478,7 @@ def kesar(
 
                 # Save data, thread-safe
                 with logfile_lock:
+                    print(f"DATA_LOG: {json.dumps(data)}")
                     with open(logfile, "a") as f:
                         f.write(json.dumps(data) + "\n")
                         f.flush()
