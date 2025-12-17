@@ -246,7 +246,7 @@ class FilledBag(Bag):
         )
         return div_(
             id=f"{self.name}_bag",
-            class_=f"bag_container",
+            class_=f"bag_container {additional_class}",
             onClick=f"{self.onclick_fn}(this);",
             style=f"display: flex; justify-content: flex-start; {'cursor: pointer;'}",
         )(*items)
@@ -311,7 +311,7 @@ class PrizeWithHook(Object):
         # Get prize object
         prize_html = self.prize.get_html(
             additional_style="z-index: 9;",
-            additional_class="hidden",
+            additional_class=f"hidden {additional_class}",
         )
 
         prize_top = self.prize.info["y"]
@@ -335,11 +335,11 @@ class PrizeWithHook(Object):
             side=self.side,
             left=hook_x,
             top=hook_y,
-        ).get_html(additional_class="hidden")
+        ).get_html(additional_class=f"hidden {additional_class}")
 
-        return div_(id=f"prize_with_hook_container_{self.side}")(
-            prize_html, hook
-        )
+        return div_(
+            id=f"prize_with_hook_container_{self.side}", class_=additional_class
+        )(prize_html, hook)
 
 
 class ScoreMeter:

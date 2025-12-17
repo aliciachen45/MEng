@@ -114,11 +114,12 @@ class Trial:
         self.left = Chest(side="left")
         self.right = Chest(side="right")
 
-        onclick_fn = (
-            "selectChest"
-            if self.trial_info["stage_2"]["include"]
-            else "openChest"
-        )
+        # onclick_fn = (
+        #     "selectChest"
+        #     if self.trial_info["stage_2"]["include"]
+        #     else "openChest"
+        # )
+        onclick_fn = "handleChestSelection"
 
         self.left.onclick_fn = onclick_fn
         self.right.onclick_fn = onclick_fn
@@ -177,21 +178,53 @@ class Trial:
 
         # assigning prize to chest
 
-        # items.extend([self.left.get_html(), self.right.get_html()])
-
         # hidden input to record choice
         hidden_input = input_(
             type_="hidden",
-            id="choice_input",  # id for JavaScript
-            name="clicked_side",  # name for the server log
+            id="choice_input1",  # id for JavaScript
+            name="clicked_side1",  # name for the server log
         )
         items.append(hidden_input)
 
+        # if stage 2:
+        if self.num_stages == 2:
+            # declaring the new prize
+            left_prize_obj2 = FilledBag(
+                name=f"hooked_prize_left",
+                side="left",
+                open=False,
+                num_coins=self.trial_info["stage_2"]["prize_coins"],
+            )
+
+            left_PWH_object = PrizeWithHook(prize=left_prize_obj2, side="left")
+
+            right_prize_obj2 = FilledBag(
+                name=f"hooked_prize_right",
+                side="right",
+                open=False,
+                num_coins=self.trial_info["stage_2"]["prize_coins"],
+            )
+
+            right_PWH_object = PrizeWithHook(
+                prize=right_prize_obj2, side="right"
+            )
+            items.extend(
+                [
+                    left_PWH_object.get_html(additional_class="stage2_prop"),
+                    right_PWH_object.get_html(additional_class="stage2_prop"),
+                ]
+            )
+
+            hidden_input = input_(
+                type_="hidden",
+                id="choice_input2",  # id for JavaScript
+                name="clicked_side2",  # name for the server log
+            )
+            items.append(hidden_input)
+
         choice_page = self._prep_experiment_page(items, curr_stage=1)
-        # animation_page = self._prep_experiment_page(items, curr_stage=1)
 
         pages.append(choice_page)
-
         return pages
 
     def get_stage2(self, keep_side):
@@ -374,12 +407,15 @@ def run_training_trial1(data):
 
         data[trial.trial_num] = trial_data
 
-        if choice["clicked_side"][0] == trial.first_prize_side:
+        if choice["clicked_side1"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
 
-        if trial_data["choice1"]["clicked_side"][0] == trial_data["prize_side"]:
+        if (
+            trial_data["choice1"]["clicked_side1"][0]
+            == trial_data["prize_side"]
+        ):
             Trial.trigger_highlight = False
             break
 
@@ -409,19 +445,20 @@ def run_training_trial2(data):
 
         data[trial.trial_num] = trial_data
 
-        if choice["clicked_side"][0] == trial.first_prize_side:
+        if choice["clicked_side1"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
 
-        if trial_data["choice1"]["clicked_side"][0] == trial_data["prize_side"]:
+        if (
+            trial_data["choice1"]["clicked_side1"][0]
+            == trial_data["prize_side"]
+        ):
             break
 
 
 def run_training_trial3(data):
     possible_combos = [
-        # (4, 1),
-        # (2, 1),
         (4, 2),
     ]
 
@@ -446,19 +483,14 @@ def run_training_trial3(data):
 
         # yield stage1_pages[0]
 
-        first_response = yield stage1_pages[0]
-        first_choice = first_response["clicked_side"][0]
-        print("Recieved_response:", first_choice)
-        trial_data["choice1"] = first_response
-
-        # Stage 2 pages
-        stage2_pages = trial.get_stage2(keep_side=first_choice)
-
+        response = yield stage1_pages[0]
+        print("RESPONSE:", response)
+        first_choice = response["clicked_side1"][0]
+        trial_data["choice1"] = first_choice
         # yield stage2_pages[0]
 
-        second_response = yield stage2_pages[0]
-        second_choice = second_response["clicked_side"][0]
-        trial_data["choice2"] = second_response
+        second_choice = response["clicked_side2"][0]
+        trial_data["choice2"] = second_choice
 
         if second_choice != first_choice:
             print(
@@ -515,19 +547,14 @@ def run_training_trial4(data):
 
         # yield stage1_pages[0]
 
-        first_response = yield stage1_pages[0]
-        first_choice = first_response["clicked_side"][0]
-        print("Recieved_response:", first_choice)
-        trial_data["choice1"] = first_response
-
-        # Stage 2 pages
-        stage2_pages = trial.get_stage2(keep_side=first_choice)
-
+        response = yield stage1_pages[0]
+        print("RESPONSE:", response)
+        first_choice = response["clicked_side1"][0]
+        trial_data["choice1"] = first_choice
         # yield stage2_pages[0]
 
-        second_response = yield stage2_pages[0]
-        second_choice = second_response["clicked_side"][0]
-        trial_data["choice2"] = second_response
+        second_choice = response["clicked_side2"][0]
+        trial_data["choice2"] = second_choice
 
         if second_choice != first_choice:
             print(
@@ -601,17 +628,14 @@ def run_testing_trial(data):
                 "coins2": trial_info["stage2_coins"],
             }
 
-            first_response = yield stage1_pages[0]
-            first_choice = first_response["clicked_side"][0]
-            print("Recieved_response:", first_choice)
-            trial_data["choice1"] = first_response
+            response = yield stage1_pages[0]
+            print("RESPONSE:", response)
+            first_choice = response["clicked_side1"][0]
+            trial_data["choice1"] = first_choice
+            # yield stage2_pages[0]
 
-            # Stage 2 pages
-            stage2_pages = trial.get_stage2(keep_side=first_choice)
-
-            second_response = yield stage2_pages[0]
-            second_choice = second_response["clicked_side"][0]
-            trial_data["choice2"] = second_response
+            second_choice = response["clicked_side2"][0]
+            trial_data["choice2"] = second_choice
 
             if second_choice != first_choice:
                 print(
@@ -641,10 +665,10 @@ def experiment(uid):
     # Begin
     yield start_page()
 
-    # yield from run_training_trial1(data)
+    yield from run_training_trial1(data)
     # yield from run_training_trial2(data)
-    # yield from run_training_trial3(data)
+    yield from run_training_trial3(data)
     # yield from run_training_trial4(data)
-    yield from run_testing_trial(data)
+    # yield from run_testing_trial(data)
 
     return data

@@ -1,6 +1,13 @@
 const PLAY_AUDIO = true;
 const SCRIPT_PATH = "../audio/script";
 
+
+let GAME_STATE = {
+    stage: 1,
+    choice_1: null,
+    choice_2: null,
+    processing: false
+};
 // --- Async Helpers ---
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -33,6 +40,7 @@ async function add_script(audio_src, delay = 0) {
 // --- Animation Components (Async) ---
 
 
+
 function triggerOval() {
     const highlight = document.getElementById('score_highlight');
     highlight.classList.add('oval-highlight-animation');
@@ -57,7 +65,7 @@ async function shiftPageInRight() {
     }
 
     // 2. Wait for animation duration
-    await wait(1100);
+    await wait(1200);
 
     // 3. Cleanup classes
     for (var child of elements) {
@@ -102,9 +110,10 @@ async function shiftPageOutLeft() {
 /**
  * Drops coins into the bag one by one.
  */
-async function placeCoinsInBag(prize_place_positions) {
+async function placeCoinsInBag(bag_container, prize_place_positions) {
     const staggerDelayMs = 100;
-    const prize_elements = document.getElementsByClassName('prize');
+    // const prize_elements = document.getElementsByClassName('prize');
+    const prize_elements = bag_container.children;
     const coins = [];
 
     for (var prize of prize_elements) {
@@ -226,7 +235,9 @@ function startExperiment() {
 }
 
 function recordChoice(choice) {
-    const hiddenInput = document.getElementById('choice_input');
+    choice_num = GAME_STATE.stage;
+    console.log("Recording choice", choice, "for stage", choice_num);
+    const hiddenInput = document.getElementById(`choice_input${choice_num}`);
     if (hiddenInput) hiddenInput.value = choice;
 }
 
@@ -241,16 +252,31 @@ function showOverlay() {
     overlay.style.zIndex = 9999;
 }
 
-function removeObject(object) {
+// async function removeObject(object) {
+//     const allElements = [object, ...object.querySelectorAll('*')];
+//     allElements.forEach(element => {
+//         element.style.transition = "all 1.2s linear";
+//         requestAnimationFrame(() => {
+//             element.style.top = `calc(${element.style.top} - 100vh)`;
+//         });
+//     });
+// }
+async function removeObject(object) {
+    if (!object) return;
+
+    // 1. Trigger the visual animation
     const allElements = [object, ...object.querySelectorAll('*')];
     allElements.forEach(element => {
         element.style.transition = "all 1.2s linear";
         requestAnimationFrame(() => {
+            // Note: This relies on the element having a valid 'top' style set previously
             element.style.top = `calc(${element.style.top} - 100vh)`;
         });
     });
-}
 
+    // 2. Pause execution until the animation finishes (1200ms)
+    await new Promise(resolve => setTimeout(resolve, 1200));
+}
 /**
  * Stage 1 Animation (Intro)
  */
@@ -259,13 +285,14 @@ async function stage_1_animation() {
     await shiftPageInRight();
 
     // --- Setup Variables ---
-    var prizes = document.getElementsByClassName('prize');
+    const bag_container1 = document.getElementsByClassName('bag_container')[0];
+    var prizes = bag_container1.children;
     if (prizes.length === 0) return;
-    const bag_container = document.getElementsByClassName('bag_container');
+
     let bag = null;
     for (var prize of prizes) { if (prize.classList.contains('prize_bag')) bag = prize; }
     const chest_top = document.getElementsByClassName('chest_top_image');
-    let prize_side = bag_container[0].id.includes('right') ? "right" : "left";
+    let prize_side = bag_container1.id.includes('right') ? "right" : "left";
     let prize_place_positions = (prize_side == "left")
         ? ['prize-place-left-reset', 'prize-place-left-1', 'prize-place-left-2']
         : ['prize-place-right-reset', 'prize-place-right-1', 'prize-place-right-2'];
@@ -286,6 +313,7 @@ async function stage_1_animation() {
     // --- Reveal Elements ---
     for (var occluder of occluders) occluder.classList.remove('hidden');
     for (var prize of prizes) prize.classList.remove('hidden');
+    bag_container1.classList.remove('hidden');
 
     // --- Bag & Coin Sequence ---
     await wait(500);
@@ -296,7 +324,7 @@ async function stage_1_animation() {
     await wait(1200);
 
     // Drop coins (Async)
-    await placeCoinsInBag(prize_place_positions);
+    await placeCoinsInBag(bag_container1, prize_place_positions);
 
     // Close Bag
     await wait(500); // Short pause after coins drop
@@ -349,11 +377,15 @@ async function stage_1_animation() {
         top.classList.remove('open_chest_simple_animation');
         top.classList.add('close_chest_simple_animation');
     }
-    if (PLAY_AUDIO) new Audio("../audio/open_chest_creak.mp3").play();
+    new Audio("../audio/open_chest_creak.mp3").play();
 
     // --- Occluders Exit (Async) ---
     await wait(1000); // Pause before lifting
     await animateOccludersExit(occluders);
+
+    for (var top of chest_top) {
+        top.classList.remove('close_chest_simple_animation');
+    }
 
     // --- Final Prompt ---
 
@@ -369,38 +401,49 @@ async function stage_1_animation() {
     // document.querySelector('form').submit();
 
     prize_chest_container = document.getElementById(`chest_container_${prize_side}`);
-    prize_chest_container.appendChild(bag_container[0]);
+    prize_chest_container.appendChild(bag_container1);
 
     const overlay = document.getElementById('processing-overlay');
     overlay.style.zIndex = -1;
+
+
 }
 
 /**
  * Stage 2 Animation (Hook)
  */
 async function stage_2_animation() {
+    showOverlay();
     let hook, hook_pos1_x, hook_pos1_y, position;
 
     const hooks = document.getElementsByClassName('hook');
+    position = GAME_STATE.choice_1 == "left" ? "right" : "left";
+
     for (var object of hooks) {
         if (object.id.includes('prize')) {
-            hook_pos1_x = object.style.left;
-            hook_pos1_y = object.style.top;
-            position = object.id.split('_')[2];
-            hook = object;
+            if (object.id.split('_')[2] == position) {
+
+                hook_pos1_x = object.style.left;
+                hook_pos1_y = object.style.top;
+                hook = object;
+            }
         }
     }
+
+    prize_bag_container = document.getElementById(`hooked_prize_${position}_bag`)
+    console.log("hool fund", hook);
 
     const all_prize_elements = document.getElementsByClassName('prize');
     const prize_elements = [];
     const original_prize_positions = [];
 
     for (var object of all_prize_elements) {
-        if (object.id.includes(position)) {
+        if (object.id.includes(position) && object.classList.contains("stage2_prop")) {
             prize_elements.push(object);
             original_prize_positions.push(({ left: object.style.left, top: object.style.top }));
         }
     }
+    console.log("found prize_elemnts", prize_elements);
 
     // Calculate Reset positions
     let reset_deltax = "", reset_deltay = "";
@@ -423,12 +466,19 @@ async function stage_2_animation() {
     hook.style.top = hook_posreset_y;
 
     hook.classList.remove('hidden');
+    prize_bag_container.classList.remove('hidden');
     for (var obj of prize_elements) obj.classList.remove('hidden');
+
+    console.log("found prize elemtns again", prize_elements);
 
     // --- Hook Audio Sequence (Async) ---
     var play_hook_intro = document.getElementById("play_hook_intro").innerText;
     console.log("Play hook intro", play_hook_intro);
 
+    console.log("hook_posreset_x", hook_posreset_x);
+    console.log("hook_posreset_y", hook_posreset_y);
+    console.log("hook_pos_1_x", hook_pos1_x);
+    console.log("hook_pos_1_y", hook_pos1_y);
 
 
     if (play_hook_intro == "True") {
@@ -494,16 +544,46 @@ async function stage_2_animation() {
     overlay.style.zIndex = -1;
 }
 
+
+async function handleChestSelection(object) {
+    const stage = GAME_STATE.stage;
+    var num_stages = document.getElementById("num_stages").innerText;
+
+
+    let choice = object.id.includes('left') ? 'left' : 'right';
+
+    if (stage == 1) {
+        GAME_STATE.choice_1 = choice;
+    } else {
+        GAME_STATE.choice_2 = choice;
+    }
+
+    if (stage == num_stages) {
+        await openChest(object);
+
+        SUBMITTING = true;
+        document.querySelector('form').submit();
+    } else {
+        await selectChest(object);
+        GAME_STATE.stage += 1;
+        await stage_2_animation();
+    }
+
+
+}
+
 /**
  * Main Interaction: Select Chest
  */
 async function selectChest(object) {
     showOverlay();
+
     playAudio("../audio/pop.mp3");
 
     let choice = object.id.includes('left') ? 'left' : 'right';
     let chest_top = null;
 
+    // Apply pulse animation to chosen chest
     for (var child of object.children) {
         if (child.id.includes('chest')) {
             chest_top = child;
@@ -511,21 +591,35 @@ async function selectChest(object) {
         }
     }
 
-    // Remove non-chosen chest
+    // Wait slightly to match the pulse timing before removing the other chest
+    await wait(700);
+
+    // Remove non-chosen chest (Async)
     const non_chosen = choice == 'left' ? 'right' : 'left';
-    Array.from(object.parentElement.children).forEach(sibling => {
-        if (sibling.id.includes(non_chosen)) {
-            // Async removal not strictly necessary here as we just want it gone
-            // but we can delay slightly to match pulse
-            setTimeout(() => removeObject(sibling), 700);
+    const siblings = Array.from(object.parentElement.children);
+
+    for (const sibling of siblings) {
+        if (sibling.id.includes(non_chosen) && !sibling.classList.contains("stage2_prop")) {
+            console.log("removing other object", sibling);
+            // Now we properly await the animation
+            removeObject(sibling);
         }
-    });
+    }
+
+    await wait(1200);
+    for (var child of object.children) {
+        if (child.id.includes('chest')) {
+            chest_top = child;
+            chest_top.classList.remove('pulse_animation');
+        }
+    }
+
 
     recordChoice(choice);
-    await wait(2500);
+    await wait(1300); // Optional: Wait a bit after removal before submitting
 
-    SUBMITTING = true;
-    document.querySelector('form').submit();
+    // SUBMITTING = true;
+    // document.querySelector('form').submit();
 }
 
 /**
@@ -654,8 +748,8 @@ async function openChest(object) {
     await shiftPageOutLeft();
 
     // // 8. Submit
-    SUBMITTING = true;
-    document.querySelector('form').submit("hi");
+    // SUBMITTING = true;
+    // document.querySelector('form').submit("hi");
 }
 
 async function revealCoinsAndBag(bagContainerObj, submit = true) {
