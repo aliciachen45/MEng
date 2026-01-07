@@ -981,11 +981,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let back_button_note = document.getElementById('backbutton_note');
     console.log("Current stage:", stage);
     if (stage == '1') {
-        back_button_note.classList.add('hidden');
+        // back_button_note.classList.add('hidden');
         stage_1_animation()
     }
     else if (stage == '2') {
-        back_button_note.classList.add('hidden');
+        // back_button_note.classList.add('hidden');
         stage_2_animation();
     }
 

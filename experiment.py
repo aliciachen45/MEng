@@ -2,9 +2,47 @@ from kesar import *
 from constants import *
 import random
 from visual import *
+import boto3
+import json
+import os
+from dotenv import load_dotenv
 
 SCORE = ScoreDisplay()
 METER = ScoreMeter()
+load_dotenv()
+
+
+def save_to_s3(data, uid):
+    """
+    Uploads the experiment data directly to an S3 bucket.
+    """
+    access_key = os.getenv("AWS_ACCESS_KEY_ID")
+    secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    bucket_name = os.getenv("AWS_BUCKET_NAME")
+    region = os.getenv("AWS_REGION")
+
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        region_name=region,
+    )
+
+    file_key = f"logs/{uid}.json"
+    json_content = json.dumps(data, indent=2)
+
+    try:
+        s3.put_object(
+            Bucket=bucket_name,
+            Key=file_key,
+            Body=json_content,
+            ContentType="application/json",
+        )
+        print(
+            f"Successfully uploaded log for {uid} to S3 bucket {bucket_name}."
+        )
+    except Exception as e:
+        print(f"FAILED to upload to S3: {e}")
 
 
 def chest_with_hook_(side="left"):
@@ -61,9 +99,6 @@ class Trial:
 
     def _prep_experiment_page(self, items, curr_stage):
         items.append(div_(id="processing-overlay")(""))
-
-        items.append(div_(id="REMOVE")(self.trial_info))
-
         items.append(div_(id="stage_indicator", class_="variable")(curr_stage))
         items.append(div_(id="trial_type", class_="variable")(self.trial_type))
 
@@ -375,6 +410,9 @@ class TestingTrial(Trial):
 
 def start_page():
     return div_(id="start_page")(
+        p_(id="backbutton_note")(
+            em_()('Note: do not press the "back" button during this study.')
+        ),
         button_(id="start_button", onClick="startExperiment()")(
             "Click to begin!"
         ),
@@ -411,6 +449,9 @@ def run_training_trial1(data):
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
+            data["coins_recieved"] = coin_amount
+        else:
+            data["coins_recieved"] = 0
 
         if (
             trial_data["choice1"]["clicked_side1"][0]
@@ -449,6 +490,9 @@ def run_training_trial2(data):
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
+            data["coins_recieved"] = coin_amount
+        else:
+            data["coins_recieved"] = 0
 
         if (
             trial_data["choice1"]["clicked_side1"][0]
@@ -507,6 +551,8 @@ def run_training_trial3(data):
         METER.curr_score = SCORE.score
 
         data[trial.trial_num] = trial_data
+        data["coins_recieved"] = coin_amount
+
         if coin_amount == trial.max_coins:
             break
         # if (
@@ -571,6 +617,7 @@ def run_training_trial4(data):
         METER.curr_score = SCORE.score
 
         data[trial.trial_num] = trial_data
+        data["coins_recieved"] = coin_amount
 
         if coin_amount == trial.max_coins:
             break
@@ -649,6 +696,7 @@ def run_testing_trial(data):
             METER.curr_score = SCORE.score
 
             data[trial.trial_num] = trial_data
+            data["coins_recieved"] = coin_amount
 
 
 @kesar
@@ -670,5 +718,5 @@ def experiment(uid):
     yield from run_training_trial3(data)
     # yield from run_training_trial4(data)
     # yield from run_testing_trial(data)
-
+    save_to_s3(data, uid)
     return data
