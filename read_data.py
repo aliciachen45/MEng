@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-access_key = os.getenv("AWS_ACCESS_KEY_ID")
-secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-bucket_name = os.getenv("AWS_BUCKET_NAME")
-region = os.getenv("AWS_REGION")
+access_key = os.getenv("AWS_ACCESS_KEY")
+secret_key = os.getenv("AWS_SECRET_KEY")
+bucket_name = os.getenv("BUCKET_NAME")
+region = os.getenv("REGION_NAME")
 
 # Initialize the connection
 s3 = boto3.client(

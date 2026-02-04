@@ -407,8 +407,10 @@ def kesar(
 
     class Experiment(http.server.SimpleHTTPRequestHandler):
         def do_GET(self):
-            if self.path != "/":
-                # return super().do_GET()
+            parsed_path = urlparse(self.path).path
+            # if self.path != "/":
+            if parsed_path != "/":
+                # ie there is data attached in the GET
                 path = self.translate_path(self.path)
                 if path.endswith("/"):
                     self.send_error(HTTPStatus.NOT_FOUND, "File not found")
@@ -439,7 +441,9 @@ def kesar(
             self.send_header("Expires", "0")
             self.end_headers()
 
-            sessions[uid] = script(uid)
+            child_data = parse_qs(urlparse(self.path).query)
+
+            sessions[uid] = script(child_data)
             next_form = page(uid, next(sessions[uid]))
             self.wfile.write(next_form.encode("utf-8"))
 
