@@ -704,41 +704,27 @@ def run_testing_trial(data):
 @kesar
 def experiment(child_data):
     # Reset the experiment state
-    # SCORE.score = 0
-    # METER.curr_score = SCORE.score
+    SCORE.score = 0
+    METER.curr_score = SCORE.score
     child_id = child_data.get("child", [""])[0]
     response_id = child_data.get("response", [""])[0]
     data = {
         "child_id": child_id,
         "response_id": response_id,
     }
-    # Trial.trial_num = 1  # reset trial numbering
-    # Trial.play_flag_intro = True
-    # Trial.play_hook_intro = True
-    # Trial.trigger_highlight = True
+    Trial.trial_num = 1  # reset trial numbering
+    Trial.play_flag_intro = True
+    Trial.play_hook_intro = True
+    Trial.trigger_highlight = True
 
     # # Begin
     yield start_page()
 
-    # # yield from run_training_trial1(data)
-    # # yield from run_training_trial2(data)
-    # # yield from run_training_trial3(data)
-    # # yield from run_training_trial4(data)
-    # yield from run_testing_trial(data)
+    yield from run_training_trial1(data)
+    yield from run_training_trial2(data)
+    yield from run_training_trial3(data)
+    yield from run_training_trial4(data)
+    yield from run_testing_trial(data)
 
-    data = {
-        "child_id": "KRPK2M",
-        "response_id": "30a27ce2-b3e3-419a-a2f2-d38d71064f35",
-        "1": {
-            "trial_number": 1,
-            "prize_side": "left",
-            "coins1": 2,
-            "coins2": 1,
-            "choice1": "right",
-            "choice2": "right",
-        },
-        "coins_recieved": 2,
-    }
-    print(data)
     save_to_s3(data, f"{child_id}_{response_id}")
     return data
