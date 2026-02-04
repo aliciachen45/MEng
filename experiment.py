@@ -641,16 +641,16 @@ def run_testing_trial(data):
             "stage2_coins": 1,
             "one_chest": True,
         },  # Equivalent to 1 cup trial, higher chest EV, No chest Uncertainty, OG
-        {
-            "stage1_coins": 4,
-            "stage2_coins": 1,
-            "one_chest": False,
-        },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
-        {
-            "stage1_coins": 2,
-            "stage2_coins": 1,
-            "one_chest": False,
-        },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
+        # {
+        #     "stage1_coins": 4,
+        #     "stage2_coins": 1,
+        #     "one_chest": False,
+        # },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
+        # {
+        #     "stage1_coins": 2,
+        #     "stage2_coins": 1,
+        #     "one_chest": False,
+        # },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
         # {
         #     "stage1_coins": 4,
         #     "stage2_coins": 2,
@@ -714,9 +714,9 @@ def experiment(uid):
     yield start_page()
 
     yield from run_training_trial1(data)
-    yield from run_training_trial2(data)
-    yield from run_training_trial3(data)
-    yield from run_training_trial4(data)
+    # yield from run_training_trial2(data)
+    # yield from run_training_trial3(data)
+    # yield from run_training_trial4(data)
     yield from run_testing_trial(data)
     save_to_s3(data, uid)
     return data
