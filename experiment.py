@@ -2,49 +2,18 @@ from kesar import *
 from constants import *
 import random
 from visual import *
-import boto3
-import json
-import os
-from dotenv import load_dotenv
+from data_management import *
 
 SCORE = ScoreDisplay()
 METER = ScoreMeter()
-load_dotenv()
-
-
-def save_to_s3(data, uid):
-    """
-    Uploads the experiment data directly to an S3 bucket.
-    """
-    access_key = os.getenv("AWS_ACCESS_KEY")
-    secret_key = os.getenv("AWS_SECRET_KEY")
-    bucket_name = os.getenv("BUCKET_NAME")
-    region = os.getenv("REGION_NAME")
-
-    s3 = boto3.client(
-        "s3",
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        region_name=region,
-    )
-
-    file_key = f"logs/{uid}.json"
-    json_content = json.dumps(data, indent=2)
-
-    try:
-        s3.put_object(
-            Bucket=bucket_name,
-            Key=file_key,
-            Body=json_content,
-            ContentType="application/json",
-        )
-        print(
-            f"Successfully uploaded log for {uid} to S3 bucket {bucket_name}."
-        )
-    except Exception as e:
-        print(json_content)
-        print(uid)
-        print(f"FAILED to upload to S3: {e}")
+TRIAL_ORDERS = {
+    "1": [1, 2, 2, 1, 3, 3, 2, 1, 1, 2, 3, 3],
+    "2": [2, 1, 1, 2, 3, 3, 1, 2, 2, 1, 3, 3],
+    "3": [1, 3, 3, 1, 2, 2, 3, 1, 1, 3, 2, 2],
+    "4": [3, 1, 1, 3, 2, 2, 1, 3, 3, 1, 2, 2],
+    "5": [2, 3, 3, 2, 1, 1, 3, 2, 2, 3, 1, 1],
+    "6": [3, 2, 2, 3, 1, 1, 2, 3, 3, 2, 1, 1],
+}
 
 
 def chest_with_hook_(side="left"):
@@ -100,6 +69,7 @@ class Trial:
         )
 
     def _prep_experiment_page(self, items, curr_stage):
+        print(curr_stage)
         items.append(div_(id="processing-overlay")(""))
         items.append(div_(id="stage_indicator", class_="variable")(curr_stage))
         items.append(div_(id="trial_type", class_="variable")(self.trial_type))
@@ -134,7 +104,7 @@ class Trial:
         items.append(
             div_(id="play_hook_intro", class_="variable")(Trial.play_hook_intro)
         )
-        if curr_stage == 2 and Trial.play_hook_intro:
+        if self.num_stages == 2 and Trial.play_hook_intro:
             Trial.play_hook_intro = False
 
         items.append(SCORE.get_html())
@@ -412,9 +382,6 @@ class TestingTrial(Trial):
 
 def start_page():
     return div_(id="start_page")(
-        p_(id="backbutton_note")(
-            em_()('Note: do not press the "back" button during this study.')
-        ),
         button_(id="start_button", onClick="startExperiment()")(
             "Click to begin!"
         ),
@@ -445,15 +412,18 @@ def run_training_trial1(data):
         print("Recieved_response:", choice)
         trial_data["choice1"] = choice
 
-        data[trial.trial_num] = trial_data
-
         if choice["clicked_side1"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
-            data["coins_recieved"] = coin_amount
         else:
-            data["coins_recieved"] = 0
+            coin_amount = 0
+
+        trial_data["coins_recieved"] = coin_amount
+        trial_data["test_trial"] = False
+        trial_data["test_trial_type"] = 1
+
+        data[f"trial {trial.trial_num}"] = trial_data
 
         if (
             trial_data["choice1"]["clicked_side1"][0]
@@ -486,16 +456,19 @@ def run_training_trial2(data):
         print("Recieved_response:", choice)
         trial_data["choice1"] = choice
 
-        data[trial.trial_num] = trial_data
-
         if choice["clicked_side1"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
             SCORE.score += coin_amount
             METER.curr_score = SCORE.score
-            data["coins_recieved"] = coin_amount
         else:
-            data["coins_recieved"] = 0
+            coin_amount = 0
+        trial_data["coins_recieved"] = coin_amount
+        trial_data["test_trial"] = False
+        trial_data["test_trial_type"] = 2
 
+        data[f"trial {trial.trial_num}"] = trial_data
+
+        # They answered correclty, breaking out of this loop
         if (
             trial_data["choice1"]["clicked_side1"][0]
             == trial_data["prize_side"]
@@ -552,8 +525,11 @@ def run_training_trial3(data):
         SCORE.score += coin_amount
         METER.curr_score = SCORE.score
 
-        data[trial.trial_num] = trial_data
-        data["coins_recieved"] = coin_amount
+        trial_data["coins_recieved"] = coin_amount
+        trial_data["test_trial"] = False
+        trial_data["trial_type"] = 3
+
+        data[f"trial {trial.trial_num}"] = trial_data
 
         if coin_amount == trial.max_coins:
             break
@@ -618,8 +594,11 @@ def run_training_trial4(data):
         SCORE.score += coin_amount
         METER.curr_score = SCORE.score
 
-        data[trial.trial_num] = trial_data
-        data["coins_recieved"] = coin_amount
+        trial_data["coins_recieved"] = coin_amount
+        trial_data["test_trial"] = False
+        trial_data["test_trial_type"] = 4
+
+        data[f"trial {trial.trial_num}"] = trial_data
 
         if coin_amount == trial.max_coins:
             break
@@ -635,75 +614,83 @@ def run_training_trial4(data):
 
 
 def run_testing_trial(data):
-    num_testing_trials = 1
-
     test_trials = [
         {
             "stage1_coins": 2,
             "stage2_coins": 1,
             "one_chest": True,
         },  # Equivalent to 1 cup trial, higher chest EV, No chest Uncertainty, OG
-        # {
-        #     "stage1_coins": 4,
-        #     "stage2_coins": 1,
-        #     "one_chest": False,
-        # },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
-        # {
-        #     "stage1_coins": 2,
-        #     "stage2_coins": 1,
-        #     "one_chest": False,
-        # },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
+        {
+            "stage1_coins": 4,
+            "stage2_coins": 1,
+            "one_chest": False,
+        },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
+        {
+            "stage1_coins": 2,
+            "stage2_coins": 1,
+            "one_chest": False,
+        },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
         # {
         #     "stage1_coins": 4,
         #     "stage2_coins": 2,
         #     "one_chest": False,
         # },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, modified for higher numbers
     ]
-    for _ in range(num_testing_trials):
-        for trial_info in test_trials:
-            trial = TestingTrial(
-                stage1_coins=trial_info["stage1_coins"],
-                stage2_coins=trial_info["stage2_coins"],
-                one_chest=trial_info["one_chest"],
+
+    group_num = assign_participant_to_group(
+        f"{data['child_id']}_{data['response_id']}"
+    )
+    data["group"] = group_num
+
+    for trial_type_num in TRIAL_ORDERS[group_num]:
+        trial_info = test_trials[trial_type_num - 1]
+
+        trial = TestingTrial(
+            stage1_coins=trial_info["stage1_coins"],
+            stage2_coins=trial_info["stage2_coins"],
+            one_chest=trial_info["one_chest"],
+        )
+        print("Starting trial num: ", trial.trial_num)
+
+        stage1_pages = trial.get_stage1().copy()
+        correct_side = trial.first_prize_side
+        trial_data = {
+            "trial_number": trial.trial_num,
+            "prize_side": correct_side,
+            "coins1": trial_info["stage1_coins"],
+            "coins2": trial_info["stage2_coins"],
+        }
+
+        response = yield stage1_pages[0]
+        print("RESPONSE:", response)
+        first_choice = response["clicked_side1"][0]
+        trial_data["choice1"] = first_choice
+        # yield stage2_pages[0]
+
+        second_choice = response["clicked_side2"][0]
+        trial_data["choice2"] = second_choice
+
+        if second_choice != first_choice:
+            print(
+                "Stage 2 choice differs from stage 1 choice. They chose stage 2 coins"
             )
-            print("Starting trial num: ", trial.trial_num)
+            coin_amount = trial.trial_info["stage_2"]["prize_coins"]
+        else:
+            coin_amount = trial.trial_info["stage_1"]["prize_coins"]
 
-            stage1_pages = trial.get_stage1().copy()
-            correct_side = trial.first_prize_side
-            trial_data = {
-                "trial_number": trial.trial_num,
-                "prize_side": correct_side,
-                "coins1": trial_info["stage1_coins"],
-                "coins2": trial_info["stage2_coins"],
-            }
+        SCORE.score += coin_amount
+        METER.curr_score = SCORE.score
+        trial_data["coins_recieved"] = coin_amount
+        trial_data["test_trial"] = True
+        trial_data["test_trial_type"] = trial_type_num
 
-            response = yield stage1_pages[0]
-            print("RESPONSE:", response)
-            first_choice = response["clicked_side1"][0]
-            trial_data["choice1"] = first_choice
-            # yield stage2_pages[0]
-
-            second_choice = response["clicked_side2"][0]
-            trial_data["choice2"] = second_choice
-
-            if second_choice != first_choice:
-                print(
-                    "Stage 2 choice differs from stage 1 choice. They chose stage 2 coins"
-                )
-                coin_amount = trial.trial_info["stage_2"]["prize_coins"]
-            else:
-                coin_amount = trial.trial_info["stage_1"]["prize_coins"]
-
-            SCORE.score += coin_amount
-            METER.curr_score = SCORE.score
-
-            data[trial.trial_num] = trial_data
-            data["coins_recieved"] = coin_amount
+        data[f"trial {trial.trial_num}"] = trial_data
+    return data
 
 
 @kesar
 def experiment(child_data):
-    # Reset the experiment state
+    # # Reset the experiment state
     SCORE.score = 0
     METER.curr_score = SCORE.score
     child_id = child_data.get("child", [""])[0]
@@ -717,7 +704,7 @@ def experiment(child_data):
     Trial.play_hook_intro = True
     Trial.trigger_highlight = True
 
-    # # Begin
+    # Begin
     yield start_page()
 
     yield from run_training_trial1(data)

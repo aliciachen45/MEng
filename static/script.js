@@ -486,7 +486,7 @@ async function stage_2_animation() {
         setTimeout(async () => {
             await add_script("hook_comes.wav");
             await add_script(`hook_${prize_elements.length - 1}.wav`);
-            add_script("now_which_open.wav");
+            await add_script("now_which_open.wav");
 
         }, 300);
 
@@ -511,7 +511,7 @@ async function stage_2_animation() {
 
         setTimeout(async () => {
             await add_script(`hook_${prize_elements.length - 1}_short.wav`);
-            await add_script("now_which_open.wav");
+            add_script("now_which_open.wav");
         }, 300);
         for (let i = 0; i < prize_elements.length; i++) {
             prize_elements[i].style.left = original_prize_positions[i].left;
@@ -528,8 +528,7 @@ async function stage_2_animation() {
         hook.style.left = hook_posreset_x;
         hook.style.top = hook_posreset_y;
 
-        await (1200);
-
+        await wait(1200);
 
     }
     hook.classList.add('hidden');
