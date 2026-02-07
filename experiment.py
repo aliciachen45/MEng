@@ -14,6 +14,60 @@ TRIAL_ORDERS = {
     "5": [2, 3, 3, 2, 1, 1, 3, 2, 2, 3, 1, 1],
     "6": [3, 2, 2, 3, 1, 1, 2, 3, 3, 2, 1, 1],
 }
+# L-R-R-L-R-L-L-R-L-R-R-L
+SIDE_ORDERS = [
+    [
+        "left",
+        "right",
+        "right",
+        "left",
+        "right",
+        "left",
+        "left",
+        "right",
+        "left",
+        "right",
+        "right",
+        "left",
+    ],
+    [
+        "right",
+        "left",
+        "left",
+        "right",
+        "left",
+        "right",
+        "right",
+        "left",
+        "right",
+        "left",
+        "left",
+        "right",
+    ],
+]
+
+TEST_TRIALS = [
+    {
+        "stage1_coins": 2,
+        "stage2_coins": 1,
+        "one_chest": True,
+    },  # Equivalent to 1 cup trial, higher chest EV, No chest Uncertainty, OG
+    {
+        "stage1_coins": 4,
+        "stage2_coins": 1,
+        "one_chest": False,
+    },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
+    {
+        "stage1_coins": 2,
+        "stage2_coins": 1,
+        "one_chest": False,
+    },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
+    # {
+    #     "stage1_coins": 4,
+    #     "stage2_coins": 2,
+    #     "one_chest": False,
+    # },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, modified for higher numbers
+]
 
 
 def chest_with_hook_(side="left"):
@@ -414,16 +468,19 @@ def run_training_trial1(data):
 
         if choice["clicked_side1"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
-            SCORE.score += coin_amount
-            METER.curr_score = SCORE.score
         else:
             coin_amount = 0
 
+        SCORE.score += coin_amount
+        METER.curr_score = SCORE.score
+
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = False
-        trial_data["test_trial_type"] = 1
+        trial_data["trial_type"] = 1
 
         data[f"trial {trial.trial_num}"] = trial_data
+
+        save_to_s3(data, data["unique_id"])
 
         if (
             trial_data["choice1"]["clicked_side1"][0]
@@ -458,15 +515,18 @@ def run_training_trial2(data):
 
         if choice["clicked_side1"][0] == trial.first_prize_side:
             coin_amount = trial.trial_info["stage_1"]["prize_coins"]
-            SCORE.score += coin_amount
-            METER.curr_score = SCORE.score
         else:
             coin_amount = 0
+
+        SCORE.score += coin_amount
+        METER.curr_score = SCORE.score
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = False
-        trial_data["test_trial_type"] = 2
+        trial_data["trial_type"] = 2
 
         data[f"trial {trial.trial_num}"] = trial_data
+
+        save_to_s3(data, data["unique_id"])
 
         # They answered correclty, breaking out of this loop
         if (
@@ -530,6 +590,8 @@ def run_training_trial3(data):
         trial_data["trial_type"] = 3
 
         data[f"trial {trial.trial_num}"] = trial_data
+
+        save_to_s3(data, data["unique_id"])
 
         if coin_amount == trial.max_coins:
             break
@@ -596,9 +658,11 @@ def run_training_trial4(data):
 
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = False
-        trial_data["test_trial_type"] = 4
+        trial_data["trial_type"] = 4
 
         data[f"trial {trial.trial_num}"] = trial_data
+
+        save_to_s3(data, data["unique_id"])
 
         if coin_amount == trial.max_coins:
             break
@@ -614,41 +678,25 @@ def run_training_trial4(data):
 
 
 def run_testing_trial(data):
-    test_trials = [
-        {
-            "stage1_coins": 2,
-            "stage2_coins": 1,
-            "one_chest": True,
-        },  # Equivalent to 1 cup trial, higher chest EV, No chest Uncertainty, OG
-        {
-            "stage1_coins": 4,
-            "stage2_coins": 1,
-            "one_chest": False,
-        },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
-        {
-            "stage1_coins": 2,
-            "stage2_coins": 1,
-            "one_chest": False,
-        },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, OG
-        # {
-        #     "stage1_coins": 4,
-        #     "stage2_coins": 2,
-        #     "one_chest": False,
-        # },  # Equivalent to 2 cup trial, equal chest EV, high chest uncertainty, modified for higher numbers
-    ]
-
     group_num = assign_participant_to_group(
         f"{data['child_id']}_{data['response_id']}"
     )
-    data["group"] = group_num
 
-    for trial_type_num in TRIAL_ORDERS[group_num]:
-        trial_info = test_trials[trial_type_num - 1]
+    side_order = SIDE_ORDERS[random.random() < 0.5]
+    data["group"] = group_num
+    print(TRIAL_ORDERS[group_num])
+
+    for trial_type_num, side in zip(TRIAL_ORDERS[group_num], side_order):
+        print(
+            f"Starting trial type {trial_type_num} for participant in group {group_num}"
+        )
+        trial_info = TEST_TRIALS[trial_type_num - 1]
 
         trial = TestingTrial(
             stage1_coins=trial_info["stage1_coins"],
             stage2_coins=trial_info["stage2_coins"],
             one_chest=trial_info["one_chest"],
+            prize_side=side,
         )
         print("Starting trial num: ", trial.trial_num)
 
@@ -676,15 +724,22 @@ def run_testing_trial(data):
             )
             coin_amount = trial.trial_info["stage_2"]["prize_coins"]
         else:
-            coin_amount = trial.trial_info["stage_1"]["prize_coins"]
+            if first_choice == trial.first_prize_side:
+                coin_amount = trial.trial_info["stage_1"]["prize_coins"]
+            else:
+                coin_amount = 0
+            # coin_amount = trial.trial_info["stage_1"]["prize_coins"]
 
         SCORE.score += coin_amount
         METER.curr_score = SCORE.score
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = True
-        trial_data["test_trial_type"] = trial_type_num
+        trial_data["trial_type"] = trial_type_num
 
         data[f"trial {trial.trial_num}"] = trial_data
+
+        save_to_s3(data, data["unique_id"])
+
     return data
 
 
@@ -695,9 +750,11 @@ def experiment(child_data):
     METER.curr_score = SCORE.score
     child_id = child_data.get("child", [""])[0]
     response_id = child_data.get("response", [""])[0]
+    unique_id = f"{child_id}_{response_id}"
     data = {
         "child_id": child_id,
         "response_id": response_id,
+        "unique_id": unique_id,
     }
     Trial.trial_num = 1  # reset trial numbering
     Trial.play_flag_intro = True
@@ -712,6 +769,4 @@ def experiment(child_data):
     yield from run_training_trial3(data)
     yield from run_training_trial4(data)
     yield from run_testing_trial(data)
-
-    save_to_s3(data, f"{child_id}_{response_id}")
     return data

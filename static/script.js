@@ -166,7 +166,11 @@ async function animateOccludersExit(occluders) {
 async function animateCoinMove(prizes, positions) {
     // 1. "Watch this..."
     var trial_type = document.getElementById("trial_type").innerText;
-    if (trial_type != "testing") {
+
+    const highlight = document.getElementById('score_highlight');
+    var passed_first_success = highlight == null
+    console.log("Already pased first success, not playing full watch bag audio");
+    if (!passed_first_success) {
         await add_script('watch.wav', 500);
     }
 
@@ -241,6 +245,10 @@ function recordChoice(choice) {
     if (hiddenInput) hiddenInput.value = choice;
 }
 
+function hideOverlay() {
+    const overlay = document.getElementById('processing-overlay');
+    overlay.style.zIndex = -1;
+}
 function showOverlay() {
     // const overlay = document.createElement('div');
     // overlay.id = 'processing-overlay';
@@ -307,7 +315,10 @@ async function stage_1_animation() {
     if (first_trial == "True") {
         await add_script("look_treasure_chest.wav");
     } else {
-        await add_script("now_look_treasure_chest.wav");
+        var trial_type = document.getElementById("trial_type").innerText;
+        if (trial_type != "testing") {
+            await add_script("now_look_treasure_chest.wav");
+        }
     }
 
     // --- Reveal Elements ---
@@ -390,22 +401,16 @@ async function stage_1_animation() {
     // --- Final Prompt ---
 
     var num_stages = document.getElementById("num_stages").innerText;
+
+    prize_chest_container = document.getElementById(`chest_container_${prize_side}`);
+    prize_chest_container.appendChild(bag_container1);
+    hideOverlay();
+
     if (first_trial == "True" && num_stages == "1") {
         await add_script("prompt_click.wav");
     } else {
         await add_script("which_open.wav");
     }
-
-    // --- Submit ---
-    // SUBMITTING = true;
-    // document.querySelector('form').submit();
-
-    prize_chest_container = document.getElementById(`chest_container_${prize_side}`);
-    prize_chest_container.appendChild(bag_container1);
-
-    const overlay = document.getElementById('processing-overlay');
-    overlay.style.zIndex = -1;
-
 
 }
 
@@ -486,6 +491,12 @@ async function stage_2_animation() {
         setTimeout(async () => {
             await add_script("hook_comes.wav");
             await add_script(`hook_${prize_elements.length - 1}.wav`);
+
+            var hooked_prize_bag = document.getElementById(`hooked_prize_${position}_bag`);
+            var grandparent = hooked_prize_bag.parentElement.parentElement;
+            grandparent.appendChild(hooked_prize_bag);
+
+            hideOverlay();
             await add_script("now_which_open.wav");
 
         }, 300);
@@ -511,6 +522,12 @@ async function stage_2_animation() {
 
         setTimeout(async () => {
             await add_script(`hook_${prize_elements.length - 1}_short.wav`);
+
+            var hooked_prize_bag = document.getElementById(`hooked_prize_${position}_bag`);
+            var grandparent = hooked_prize_bag.parentElement.parentElement;
+            grandparent.appendChild(hooked_prize_bag);
+
+            hideOverlay();
             add_script("now_which_open.wav");
         }, 300);
         for (let i = 0; i < prize_elements.length; i++) {
@@ -534,13 +551,9 @@ async function stage_2_animation() {
     hook.classList.add('hidden');
 
 
-    var hooked_prize_bag = document.getElementById(`hooked_prize_${position}_bag`);
-    var grandparent = hooked_prize_bag.parentElement.parentElement;
-    grandparent.appendChild(hooked_prize_bag);
 
-    // --- Submit ---
-    const overlay = document.getElementById('processing-overlay');
-    overlay.style.zIndex = -1;
+    // // --- Submit ---
+    // hideOverlay();
 }
 
 
@@ -637,10 +650,10 @@ async function coin_reveal_response(prize_bag_container) {
     if (trial_type == "testing") {
         if (num_coins_chosen > 0) {
             // Play "Great Job" and wait for it to finish
-            await add_script("great_job", 0);
+            await add_script("nice_job", 0);
 
             // Play number of coins (with a small natural pause of 200ms between sentences)
-            await add_script(`${num_coins_chosen}_coins.wav`, 200);
+            // await add_script(`${num_coins_chosen}_coins.wav`, 200);
         } else {
             await add_script("oh_no_no_coins.wav", 0);
         }
@@ -664,10 +677,12 @@ async function coin_reveal_response(prize_bag_container) {
                 // }
             }
         } else {
-            await add_script("nice_try_again.wav", 0);
+            await add_script("nice_try_again_2.wav", 0);
         }
     }
 }
+
+
 
 /**
  * Main Interaction: Open Chest
@@ -877,42 +892,42 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
     }
 }
 
-async function coin_reveal_response(prize_bag_container) {
-    var trial_type = document.getElementById("trial_type").innerText;
-    const num_coins_chosen = prize_bag_container ? prize_bag_container.children.length - 1 : 0;
-    const trigger_highlight = document.getElementById("score_highlight");
-    console.log(`Response: Trial type ${trial_type}, Coins: ${num_coins_chosen}`);
+// async function coin_reveal_response(prize_bag_container) {
+//     var trial_type = document.getElementById("trial_type").innerText;
+//     const num_coins_chosen = prize_bag_container ? prize_bag_container.children.length - 1 : 0;
+//     const trigger_highlight = document.getElementById("score_highlight");
+//     console.log(`Response: Trial type ${trial_type}, Coins: ${num_coins_chosen}`);
 
-    if (trial_type == "testing") {
-        if (num_coins_chosen > 0) {
-            // Play "Great Job" and wait for it to finish
-            await add_script("great_job", 0);
+//     if (trial_type == "testing") {
+//         if (num_coins_chosen > 0) {
+//             // Play "Great Job" and wait for it to finish
+//             await add_script("great_job", 0);
 
-            // Play number of coins (with a small natural pause of 200ms between sentences)
-            await add_script(`${num_coins_chosen}_coins.wav`, 200);
-        } else {
-            await add_script("oh_no_no_coins.wav", 0);
-        }
-    } else {
-        // Main Game Logic
-        var max_possible_coins = document.getElementById("max_coins").innerText;
+//             // Play number of coins (with a small natural pause of 200ms between sentences)
+//             await add_script(`${num_coins_chosen}_coins.wav`, 200);
+//         } else {
+//             await add_script("oh_no_no_coins.wav", 0);
+//         }
+//     } else {
+//         // Main Game Logic
+//         var max_possible_coins = document.getElementById("max_coins").innerText;
 
-        if (num_coins_chosen == 0) {
-            await add_script("lets_try_again.mp3", 0);
-        } else if (num_coins_chosen == max_possible_coins) {
-            // var num_stages = document.getElementById("num_stages").innerText;
+//         if (num_coins_chosen == 0) {
+//             await add_script("lets_try_again.mp3", 0);
+//         } else if (num_coins_chosen == max_possible_coins) {
+//             // var num_stages = document.getElementById("num_stages").innerText;
 
-            if (trigger_highlight != null) {
-                await add_script("great_job_found.wav");
-            } else {
-                await add_script("great_job.wav");
+//             if (trigger_highlight != null) {
+//                 await add_script("great_job_found.wav");
+//             } else {
+//                 await add_script("great_job.wav");
 
-            }
-        } else {
-            await add_script("nice_try_again.wav", 0);
-        }
-    }
-}
+//             }
+//         } else {
+//             await add_script("nice_try_again.wav", 0);
+//         }
+//     }
+// }
 
 async function startArcAnimation(object) {
     const score_display = document.getElementById('score_display');
@@ -977,7 +992,6 @@ function setMeterValue(amount) {
 
 document.addEventListener('DOMContentLoaded', () => {
     let stage = document.getElementById('stage_indicator').innerText;
-    let back_button_note = document.getElementById('backbutton_note');
     console.log("Current stage:", stage);
     if (stage == '1') {
         // back_button_note.classList.add('hidden');
