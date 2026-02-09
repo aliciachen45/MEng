@@ -442,6 +442,15 @@ def start_page():
     )
 
 
+def end_page():
+    items = []
+    items.append(SCORE.get_html())
+    items.append(METER.get_html())
+    items.append(div_(id="stage_indicator", class_="variable")("end"))
+
+    return div_(id="end_page")(*items)
+
+
 # def run_onestagetraining(trial_num):
 def run_training_trial1(data):
     possible_coins = [2]
@@ -746,7 +755,7 @@ def run_testing_trial(data):
 @kesar
 def experiment(child_data):
     # # Reset the experiment state
-    SCORE.score = 0
+    SCORE.score = 100
     METER.curr_score = SCORE.score
     child_id = child_data.get("child", [""])[0]
     response_id = child_data.get("response", [""])[0]
@@ -769,4 +778,6 @@ def experiment(child_data):
     yield from run_training_trial3(data)
     yield from run_training_trial4(data)
     yield from run_testing_trial(data)
+
+    yield end_page()
     return data

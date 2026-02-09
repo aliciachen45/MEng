@@ -216,8 +216,10 @@ def clear_all_data():
 
 if __name__ == "__main__":
     # Example usage
-    logs = get_all_logs()
-    group_assignments = get_group_assignments()
-    print(f"Total logs retrieved: {len(logs)}")
-    print(logs)
-    print(group_assignments)
+    # clear_all_data()
+    print(get_single_log("_"))
+    # logs = get_all_logs()
+    # group_assignments = get_group_assignments()
+    # print(f"Total logs retrieved: {len(logs)}")
+    # print(logs)
+    # print(group_assignments)
