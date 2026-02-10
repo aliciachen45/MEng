@@ -892,42 +892,121 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
     }
 }
 
-// async function coin_reveal_response(prize_bag_container) {
-//     var trial_type = document.getElementById("trial_type").innerText;
-//     const num_coins_chosen = prize_bag_container ? prize_bag_container.children.length - 1 : 0;
-//     const trigger_highlight = document.getElementById("score_highlight");
-//     console.log(`Response: Trial type ${trial_type}, Coins: ${num_coins_chosen}`);
 
-//     if (trial_type == "testing") {
-//         if (num_coins_chosen > 0) {
-//             // Play "Great Job" and wait for it to finish
-//             await add_script("great_job", 0);
 
-//             // Play number of coins (with a small natural pause of 200ms between sentences)
-//             await add_script(`${num_coins_chosen}_coins.wav`, 200);
-//         } else {
-//             await add_script("oh_no_no_coins.wav", 0);
-//         }
-//     } else {
-//         // Main Game Logic
-//         var max_possible_coins = document.getElementById("max_coins").innerText;
 
-//         if (num_coins_chosen == 0) {
-//             await add_script("lets_try_again.mp3", 0);
-//         } else if (num_coins_chosen == max_possible_coins) {
-//             // var num_stages = document.getElementById("num_stages").innerText;
 
-//             if (trigger_highlight != null) {
-//                 await add_script("great_job_found.wav");
-//             } else {
-//                 await add_script("great_job.wav");
 
-//             }
-//         } else {
-//             await add_script("nice_try_again.wav", 0);
-//         }
-//     }
-// }
+async function runEndAnimation() {
+    const final_score = parseInt(document.getElementById('score_display').innerText);
+    const meter_bar = document.querySelector('.meter-bar');
+    const score_display = document.getElementById('score_display');
+
+
+    const concludingAudio = add_script("concluding.wav");
+
+    await wait(1500);
+
+    //1. Fade the meter bar
+    meter_bar.style.transition = "opacity 0.8s ease-out";
+    meter_bar.style.opacity = "0";
+    await wait(800); // Wait for fade to finish
+
+    // 2. Pulse the score to signal the start
+    for (let p = 0; p < 3; p++) {
+        score_display.classList.remove('super-pulse-active');
+        void score_display.offsetWidth; // "Magic" line to force a CSS reflow/reset
+        score_display.classList.add('super-pulse-active');
+
+        await wait(700); // Wait for the pulse duration
+    }
+
+    await concludingAudio;
+
+
+    //4. play the coins animation
+    for (let i = 0; i < final_score; i++) {
+        // decrement counter
+        score_display.innerText = (final_score - 1 - i).toString();
+
+        // Create and animate coin
+        const coin = document.createElement('img');
+        coin.src = "images/coin.png";
+        coin.classList.add('prize');
+
+        // Get starting position from the score display
+        const rect = score_display.getBoundingClientRect();
+        const startX = rect.left + (rect.width / 2);
+        const startY = rect.top + (rect.height / 2);
+
+        speed = 1.5 + Math.random() * 0.2;
+        Object.assign(coin.style, {
+            position: 'fixed',
+            left: `${startX}px`,
+            top: `${startY}px`,
+            width: '5vw',
+            zIndex: '9999',
+            transition: `all ${speed}s cubic-bezier(0.33, 1, 0.68, 1)`,
+            pointerEvents: 'none'
+        });
+
+        document.body.appendChild(coin);
+
+        requestAnimationFrame(() => {
+            // Force the end X to be to the right of the counter (e.g., between 40vw and 90vw)
+            const destX = (window.innerWidth * 0.1) + (Math.random() * window.innerWidth * 1);
+            const destY = window.innerHeight + 100; // Fall off the bottom
+
+            // Random rotation for variety
+            const rotation = Math.random() * 720 - 360;
+
+            coin.style.left = `${destX}px`;
+            coin.style.top = `${destY}px`;
+            coin.style.transform = `rotate(${rotation}deg) scale(0.7)`;
+            coin.style.opacity = '0.5'; // Fade out slightly as they fall
+        });
+
+        // const delay = Math.log(1 + i) * 500; // Increase delay for each coin
+        const delay = 1 / (i + 5) * 600 + 40;
+        new Audio("../audio/drop_coin.mp3").play();
+
+        await wait(delay);
+        // Finish this part 
+        setTimeout(() => coin.remove(), 1000);
+    }
+
+    score_display.classList.add('hidden');
+
+
+    await wait(500);
+    // final end card message
+    const endCard = document.createElement('div');
+    endCard.id = "final-message-container";
+    endCard.innerHTML = `
+        <div style="text-align: center;">
+            <h1 style="font-size: 4vw; margin-bottom: 2vh;">Thank you for completing the experiment.</h1>
+            <p style="font-size: 2.5vw; color: #555;">Please click <strong>Next</strong> below!</p>
+        </div>
+    `;
+
+    Object.assign(endCard.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        opacity: '0',
+        transition: 'opacity 1.5s ease-in-out',
+        zIndex: '10001',
+        fontFamily: 'Arial, sans-serif'
+    });
+
+    document.body.appendChild(endCard);
+
+    requestAnimationFrame(() => {
+        endCard.style.opacity = '1';
+    });
+}
+
 
 async function startArcAnimation(object) {
     const score_display = document.getElementById('score_display');
@@ -1000,6 +1079,8 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (stage == '2') {
         // back_button_note.classList.add('hidden');
         stage_2_animation();
+    } else if (stage == "end") {
+        runEndAnimation();
     }
 
 });

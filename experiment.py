@@ -755,7 +755,7 @@ def run_testing_trial(data):
 @kesar
 def experiment(child_data):
     # # Reset the experiment state
-    SCORE.score = 100
+    SCORE.score = 0
     METER.curr_score = SCORE.score
     child_id = child_data.get("child", [""])[0]
     response_id = child_data.get("response", [""])[0]

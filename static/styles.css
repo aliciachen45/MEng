@@ -160,7 +160,7 @@ body {
     left: 10vw;
     right: 10vw;
     height: 2vw;
-    background: #00000030;
+    background: #e2eed7;
 }
 
 .meter-fill {
@@ -528,4 +528,25 @@ Keyframe animations
 
 .oval-highlight-animation {
     animation: oval-highlight 2s ease-in-out forwards;
+}
+
+
+
+@keyframes super-pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.super-pulse-active {
+    animation: super-pulse 0.7s ease-in-out;
+    display: inline-block;
 }
