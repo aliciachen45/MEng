@@ -14,6 +14,7 @@ TRIAL_ORDERS = {
     "5": [2, 3, 3, 2, 1, 1, 3, 2, 2, 3, 1, 1],
     "6": [3, 2, 2, 3, 1, 1, 2, 3, 3, 2, 1, 1],
 }
+
 # L-R-R-L-R-L-L-R-L-R-R-L
 SIDE_ORDERS = [
     [
@@ -453,12 +454,16 @@ def end_page():
 
 # def run_onestagetraining(trial_num):
 def run_training_trial1(data):
-    possible_coins = [2]
+    n = 2
+    trial_order = ["left", "right", "right", "left"]
+    num_tries = 0
     # One stage training trial with no occluders
 
-    while True:
-        n = possible_coins[0]
-        trial = OneStageTrainingTrial(stage1_coins=n)
+    while num_tries < 4:
+        trial = OneStageTrainingTrial(
+            stage1_coins=n, prize_side=trial_order[num_tries]
+        )
+        num_tries += 1
         print("Starting trial num: ", trial.trial_num)
 
         all_pages = trial.get_stage1().copy()
@@ -500,12 +505,18 @@ def run_training_trial1(data):
 
 
 def run_training_trial2(data):
-    possible_coins = [1]
+    n = 1
+    trial_order = ["right", "left", "left", "right"]
+    num_tries = 0
     # One stage training tiral w/occluders:
 
-    while True:
-        n = possible_coins[0]
-        trial = OneStageTrainingTrial(stage1_coins=n, occluded="partial")
+    while num_tries < 4:
+        trial = OneStageTrainingTrial(
+            stage1_coins=n,
+            occluded="partial",
+            prize_side=trial_order[num_tries],
+        )
+        num_tries += 1
         print("Starting trial num: ", trial.trial_num)
 
         all_pages = trial.get_stage1().copy()
@@ -546,18 +557,19 @@ def run_training_trial2(data):
 
 
 def run_training_trial3(data):
-    possible_combos = [
-        (4, 2),
-    ]
-
+    n1, n2 = 4, 2
+    trial_order = ["right", "left", "left", "right"]
+    num_tries = 0
     # Two stage training trial, correct choice is chest
-    while True:
-        n1, n2 = possible_combos[0]
+    while num_tries < 4:
+
         trial = TwoStageTrainingTrial(
             stage1_coins=n1,
             stage2_coins=n2,
             occluded="partial",
+            prize_side=trial_order[num_tries],
         )
+        num_tries += 1
         print("Starting trial num: ", trial.trial_num)
 
         stage1_pages = trial.get_stage1().copy()
@@ -604,31 +616,22 @@ def run_training_trial3(data):
 
         if coin_amount == trial.max_coins:
             break
-        # if (
-        #     trial.trial_info["stage_2"]["prize_coins"]
-        #     > trial.trial_info["stage_1"]["prize_coins"]
-        # ):  # correct choice is to switch
-        #     if second_choice != trial.first_prize_side:
-        #         break
-        # else:  # correct choice is to stay
-        #     if second_choice == trial.first_prize_side:
-        #         break
 
 
 def run_training_trial4(data):
-    possible_combos = [
-        # (1, 2),
-        # (1, 4),
-        (2, 4)
-    ]
+    n1, n2 = 2, 4
+
+    trial_order = ["left", "right", "right", "left"]
+    num_tries = 0
     # Two stage training trial, correct choice is bag
-    while True:
-        n1, n2 = possible_combos[0]
+    while num_tries < 4:
         trial = TwoStageTrainingTrial(
             stage1_coins=n1,
             stage2_coins=n2,
             occluded="partial",
+            prize_side=trial_order[num_tries],
         )
+        num_tries += 1
         print("Starting trial num: ", trial.trial_num)
 
         stage1_pages = trial.get_stage1().copy()

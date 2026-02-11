@@ -384,7 +384,12 @@ TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
 /* Center mid*/
 .prize-place-left-2 {
     visibility: visible;
-    transform: translateY(-10vh) translateX(25vw) !important;
+    transform: translateY(-17vh)translateX(25vw) !important;
+}
+
+.prize-place-left-3 {
+    visibility: visible;
+    transform: translateY(-17vh) !important;
 }
 
 .prize-place-right-reset {
@@ -400,8 +405,14 @@ TODO: FIGURE OUT HOW TO MAKE THIS LESS REPETITIVE
 /* Center mid*/
 .prize-place-right-2 {
     visibility: visible;
-    transform: translateY(-10vh) translateX(-25vw) !important;
+    transform: translateY(-17vh) translateX(-25vw) !important;
 }
+
+.prize-place-right-3 {
+    visibility: visible;
+    transform: translateY(-17vh) !important;
+}
+
 
 
 
@@ -519,7 +530,7 @@ Keyframe animations
     top: 2vh;
     left: 2vw;
     z-index: 2;
-    width: 20vw;
+    width: 12vw;
     height: 5vw;
     background-color: rgb(224, 125, 125);
     border-radius: 30%;

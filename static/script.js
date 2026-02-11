@@ -164,8 +164,6 @@ async function animateOccludersExit(occluders) {
  Handles coin placement
  */
 async function animateCoinMove(prizes, positions) {
-    // 1. "Watch this..."
-    var trial_type = document.getElementById("trial_type").innerText;
 
     const highlight = document.getElementById('score_highlight');
     var passed_first_success = highlight == null
@@ -184,6 +182,13 @@ async function animateCoinMove(prizes, positions) {
     // 3. Move to Final (Hidden)
     for (var prize of prizes) {
         prize.classList.remove(positions[2]);
+        prize.classList.add(positions[3]);
+    }
+
+    await wait(800);
+
+    for (var prize of prizes) {
+        prize.classList.remove(positions[3]);
     }
 
     await wait(700);
@@ -206,9 +211,6 @@ async function animateHookSequence(hook, prize_elements, original_positions, res
     await add_script(`hook_${prize_elements.length - 1}.wav`, 0);
 
     // 3. Move Prize Back to original (In front of chest)
-    //    We simulate the hook pulling them by just moving them instantly 
-    //    after the delay (as per original logic logic) or animating them.
-    //    Original Logic: Waited 3500ms then snapped them back.
 
     for (let i = 0; i < prize_elements.length; i++) {
         prize_elements[i].style.left = original_prize_positions[i].left;
@@ -217,15 +219,9 @@ async function animateHookSequence(hook, prize_elements, original_positions, res
 
     const [hook_x, hook_y] = [hook.style.left, hook.style.top]; // Current reset pos
 
-    // Move hook to target
-    // Note: To animate this properly, we'd need to know the 'target' pos. 
-    // Assuming the calling function sets up the DOM state or we snap it.
-    // Based on original code, we just snap DOM properties.
-
     // 4. Retract Hook
     await wait(1200);
     // Reset hook to off-screen
-    // (Caller needs to handle specific coord calculations or we pass them in)
 }
 
 
@@ -250,25 +246,11 @@ function hideOverlay() {
     overlay.style.zIndex = -1;
 }
 function showOverlay() {
-    // const overlay = document.createElement('div');
-    // overlay.id = 'processing-overlay';
-    // Object.assign(overlay.style, {
-    //     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999
-    // });
-    // document.body.appendChild(overlay);
     const overlay = document.getElementById('processing-overlay');
     overlay.style.zIndex = 9999;
 }
 
-// async function removeObject(object) {
-//     const allElements = [object, ...object.querySelectorAll('*')];
-//     allElements.forEach(element => {
-//         element.style.transition = "all 1.2s linear";
-//         requestAnimationFrame(() => {
-//             element.style.top = `calc(${element.style.top} - 100vh)`;
-//         });
-//     });
-// }
+
 async function removeObject(object) {
     if (!object) return;
 
@@ -302,8 +284,8 @@ async function stage_1_animation() {
     const chest_top = document.getElementsByClassName('chest_top_image');
     let prize_side = bag_container1.id.includes('right') ? "right" : "left";
     let prize_place_positions = (prize_side == "left")
-        ? ['prize-place-left-reset', 'prize-place-left-1', 'prize-place-left-2']
-        : ['prize-place-right-reset', 'prize-place-right-1', 'prize-place-right-2'];
+        ? ['prize-place-left-reset', 'prize-place-left-1', 'prize-place-left-2', 'prize-place-left-3']
+        : ['prize-place-right-reset', 'prize-place-right-1', 'prize-place-right-2', 'prize-place-right-3'];
     const occluders = document.getElementsByClassName('occluder');
 
     // Reset positions
@@ -370,19 +352,13 @@ async function stage_1_animation() {
     }
     await wait(500);
 
-
-    setTimeout(() => {
-        for (var top of chest_top) {
-            top.style.zIndex = "6";
-        }
-    }, 3500);
     // --- Coin Magic Trick (Async) ---
     await animateCoinMove(prizes, prize_place_positions);
     for (var top of chest_top) {
         top.style.zIndex = "6";
     }
     // --- Close Chest ---
-    await wait(100);
+    await wait(300);
 
     for (var top of chest_top) {
         top.classList.remove('open_chest_simple_animation');
