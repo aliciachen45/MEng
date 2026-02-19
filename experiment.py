@@ -122,6 +122,7 @@ class Trial:
             trial_info["stage_1"]["prize_coins"],
             trial_info["stage_2"]["prize_coins"],
         )
+        self.halfway = False
 
     def _prep_experiment_page(self, items, curr_stage):
         print(curr_stage)
@@ -152,6 +153,7 @@ class Trial:
 
         if Trial.trigger_highlight:
             items.append(div_(id="score_highlight")(""))
+            Trial.trigger_highlight = False
 
         if Trial.play_flag_intro and self.occluder_type != "":
             Trial.play_flag_intro = False
@@ -161,6 +163,9 @@ class Trial:
         )
         if self.num_stages == 2 and Trial.play_hook_intro:
             Trial.play_hook_intro = False
+
+        if self.halfway:
+            items.append(div_(id="halfway_indicator", class_="variable")(True))
 
         items.append(SCORE.get_html())
         items.append(METER.get_html())
@@ -500,7 +505,6 @@ def run_training_trial1(data):
             trial_data["choice1"]["clicked_side1"][0]
             == trial_data["prize_side"]
         ):
-            Trial.trigger_highlight = False
             break
 
 
@@ -698,7 +702,9 @@ def run_testing_trial(data):
     data["group"] = group_num
     print(TRIAL_ORDERS[group_num])
 
-    for trial_type_num, side in zip(TRIAL_ORDERS[group_num], side_order):
+    for i, (trial_type_num, side) in enumerate(
+        zip(TRIAL_ORDERS[group_num], side_order)
+    ):
         print(
             f"Starting trial type {trial_type_num} for participant in group {group_num}"
         )
@@ -710,6 +716,8 @@ def run_testing_trial(data):
             one_chest=trial_info["one_chest"],
             prize_side=side,
         )
+        if i == 2:
+            trial.halfway = True
         print("Starting trial num: ", trial.trial_num)
 
         stage1_pages = trial.get_stage1().copy()

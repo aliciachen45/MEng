@@ -45,6 +45,13 @@ function triggerOval() {
     const highlight = document.getElementById('score_highlight');
     highlight.classList.add('oval-highlight-animation');
 }
+
+async function playHalfway() {
+    const halfway = document.getElementById('halfway_indicator');
+    if (halfway != null) {
+        await add_script("halfway.wav");
+    }
+}
 /**
  * Handles the page sliding in from the right.
  * Resolves when the animation is fully complete and cleanup is done.
@@ -548,7 +555,7 @@ async function handleChestSelection(object) {
 
     if (stage == num_stages) {
         await openChest(object);
-
+        await playHalfway();
         SUBMITTING = true;
         document.querySelector('form').submit();
     } else {
@@ -863,6 +870,7 @@ async function revealCoinsAndBag(bagContainerObj, submit = true) {
 
     if (submit) {
         await shiftPageOutLeft();
+        await playHalfway();
         SUBMITTING = true;
         document.querySelector('form').submit();
     }
