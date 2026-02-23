@@ -595,6 +595,7 @@ def run_training_trial3(data):
 
         second_choice = response["clicked_side2"][0]
         trial_data["choice2"] = second_choice
+        trial_data["time_"] = response["time_"]
 
         if second_choice != first_choice:
             print(
@@ -657,6 +658,7 @@ def run_training_trial4(data):
 
         second_choice = response["clicked_side2"][0]
         trial_data["choice2"] = second_choice
+        trial_data["time_"] = response["time_"]
 
         if second_choice != first_choice:
             print(
@@ -737,6 +739,7 @@ def run_testing_trial(data):
 
         second_choice = response["clicked_side2"][0]
         trial_data["choice2"] = second_choice
+        trial_data["time_"] = response["time_"]
 
         if second_choice != first_choice:
             print(
