@@ -2,10 +2,9 @@ from kesar import *
 from constants import *
 import random
 from visual import *
-from data_management import *
+from data.data_management import *
 
-SCORE = ScoreDisplay()
-METER = ScoreMeter()
+
 TRIAL_ORDERS = {
     "1": [1, 2, 2, 1, 3, 3, 2, 1, 1, 2, 3, 3],
     "2": [2, 1, 1, 2, 3, 3, 1, 2, 2, 1, 3, 3],
@@ -104,7 +103,13 @@ class Trial:
     play_hook_intro = True
     trigger_highlight = True
 
-    def __init__(self, trial_info, prize_side=None):
+    def __init__(
+        self,
+        trial_info,
+        score,
+        meter,
+        prize_side=None,
+    ):
         # trial_info: {stage 1: {include: True/False, prize_coins: int}, stage 2: {include: True/False, prize_coins: int}}
         # self.occluded = occluded
         self.trial_info = trial_info
@@ -123,6 +128,8 @@ class Trial:
             trial_info["stage_2"]["prize_coins"],
         )
         self.halfway = False
+        self.score = score
+        self.meter = meter
 
     def _prep_experiment_page(self, items, curr_stage):
         print(curr_stage)
@@ -167,8 +174,8 @@ class Trial:
         if self.halfway:
             items.append(div_(id="halfway_indicator", class_="variable")(True))
 
-        items.append(SCORE.get_html())
-        items.append(METER.get_html())
+        items.append(self.score.get_html())
+        items.append(self.meter.get_html())
         return div_(id="experiment_screen", style="display: flex;")(*items)
 
     def get_stage1(self):
@@ -373,7 +380,9 @@ class Trial:
 
 
 class OneStageTrainingTrial(Trial):
-    def __init__(self, stage1_coins, occluded="", prize_side=None):
+    def __init__(
+        self, stage1_coins, score, meter, occluded="", prize_side=None
+    ):
         trial_info = {
             "stage_1": {
                 "include": True,
@@ -385,7 +394,7 @@ class OneStageTrainingTrial(Trial):
                 "prize_coins": 0,
             },
         }
-        super().__init__(trial_info, prize_side=prize_side)
+        super().__init__(trial_info, score, meter, prize_side=prize_side)
         self.trial_type = "training"
 
 
@@ -394,6 +403,8 @@ class TwoStageTrainingTrial(Trial):
         self,
         stage1_coins,
         stage2_coins,
+        score,
+        meter,
         occluded="",
         prize_side=None,
     ):
@@ -408,7 +419,7 @@ class TwoStageTrainingTrial(Trial):
                 "prize_coins": stage2_coins,
             },
         }
-        super().__init__(trial_info, prize_side=prize_side)
+        super().__init__(trial_info, score, meter, prize_side=prize_side)
         self.trial_type = "training"
 
 
@@ -417,6 +428,8 @@ class TestingTrial(Trial):
         self,
         stage1_coins,
         stage2_coins,
+        score,
+        meter,
         prize_side=None,
         one_chest=True,
     ):
@@ -436,7 +449,7 @@ class TestingTrial(Trial):
                 "prize_coins": stage2_coins,
             },
         }
-        super().__init__(trial_info, prize_side=prize_side)
+        super().__init__(trial_info, score, meter, prize_side=prize_side)
         self.trial_type = "testing"
 
 
@@ -448,17 +461,17 @@ def start_page():
     )
 
 
-def end_page():
+def end_page(score, meter):
     items = []
-    items.append(SCORE.get_html())
-    items.append(METER.get_html())
+    items.append(score.get_html())
+    items.append(meter.get_html())
     items.append(div_(id="stage_indicator", class_="variable")("end"))
 
     return div_(id="end_page")(*items)
 
 
 # def run_onestagetraining(trial_num):
-def run_training_trial1(data):
+def run_training_trial1(data, score, meter):
     n = 2
     trial_order = ["left", "right", "right", "left"]
     num_tries = 0
@@ -466,7 +479,10 @@ def run_training_trial1(data):
 
     while num_tries < 4:
         trial = OneStageTrainingTrial(
-            stage1_coins=n, prize_side=trial_order[num_tries]
+            stage1_coins=n,
+            score=score,
+            meter=meter,
+            prize_side=trial_order[num_tries],
         )
         num_tries += 1
         print("Starting trial num: ", trial.trial_num)
@@ -490,14 +506,15 @@ def run_training_trial1(data):
         else:
             coin_amount = 0
 
-        SCORE.score += coin_amount
-        METER.curr_score = SCORE.score
+        score.score += coin_amount
+        meter.curr_score = score.score
 
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = False
         trial_data["trial_type"] = 1
+        trial_data["total_score"] = score.score
 
-        data[f"trial {trial.trial_num}"] = trial_data
+        data[f"trial__train_1_seq_{trial.trial_num}"] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -508,7 +525,7 @@ def run_training_trial1(data):
             break
 
 
-def run_training_trial2(data):
+def run_training_trial2(data, score, meter):
     n = 1
     trial_order = ["right", "left", "left", "right"]
     num_tries = 0
@@ -517,6 +534,8 @@ def run_training_trial2(data):
     while num_tries < 4:
         trial = OneStageTrainingTrial(
             stage1_coins=n,
+            score=score,
+            meter=meter,
             occluded="partial",
             prize_side=trial_order[num_tries],
         )
@@ -542,13 +561,14 @@ def run_training_trial2(data):
         else:
             coin_amount = 0
 
-        SCORE.score += coin_amount
-        METER.curr_score = SCORE.score
+        score.score += coin_amount
+        meter.curr_score = score.score
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = False
         trial_data["trial_type"] = 2
+        trial_data["total_score"] = score.score
 
-        data[f"trial {trial.trial_num}"] = trial_data
+        data[f"trial__train_2_seq_{trial.trial_num}"] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -560,7 +580,7 @@ def run_training_trial2(data):
             break
 
 
-def run_training_trial3(data):
+def run_training_trial3(data, score, meter):
     n1, n2 = 4, 2
     trial_order = ["right", "left", "left", "right"]
     num_tries = 0
@@ -570,6 +590,8 @@ def run_training_trial3(data):
         trial = TwoStageTrainingTrial(
             stage1_coins=n1,
             stage2_coins=n2,
+            score=score,
+            meter=meter,
             occluded="partial",
             prize_side=trial_order[num_tries],
         )
@@ -608,14 +630,15 @@ def run_training_trial3(data):
             else:
                 coin_amount = 0
 
-        SCORE.score += coin_amount
-        METER.curr_score = SCORE.score
+        score.score += coin_amount
+        meter.curr_score = score.score
 
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = False
         trial_data["trial_type"] = 3
+        trial_data["total_score"] = score.score
 
-        data[f"trial {trial.trial_num}"] = trial_data
+        data[f"trial__train_3_seq_{trial.trial_num}"] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -623,7 +646,7 @@ def run_training_trial3(data):
             break
 
 
-def run_training_trial4(data):
+def run_training_trial4(data, score, meter):
     n1, n2 = 2, 4
 
     trial_order = ["left", "right", "right", "left"]
@@ -633,6 +656,8 @@ def run_training_trial4(data):
         trial = TwoStageTrainingTrial(
             stage1_coins=n1,
             stage2_coins=n2,
+            score=score,
+            meter=meter,
             occluded="partial",
             prize_side=trial_order[num_tries],
         )
@@ -671,14 +696,14 @@ def run_training_trial4(data):
             else:
                 coin_amount = 0
 
-        SCORE.score += coin_amount
-        METER.curr_score = SCORE.score
+        score.score += coin_amount
+        meter.curr_score = score.score
 
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = False
         trial_data["trial_type"] = 4
-
-        data[f"trial {trial.trial_num}"] = trial_data
+        trial_data["total_score"] = score.score
+        data[f"trial__train_4_seq_{trial.trial_num}"] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -695,20 +720,21 @@ def run_training_trial4(data):
         #         break
 
 
-def run_testing_trial(data):
+def run_testing_trial(data, score, meter):
     group_num = assign_participant_to_group(
         f"{data['child_id']}_{data['response_id']}"
     )
 
     side_order = SIDE_ORDERS[random.random() < 0.5]
     data["group"] = group_num
-    print(TRIAL_ORDERS[group_num])
+
+    trial_letter = {1: "A", 2: "B", 3: "C"}
 
     for i, (trial_type_num, side) in enumerate(
         zip(TRIAL_ORDERS[group_num], side_order)
     ):
         print(
-            f"Starting trial type {trial_type_num} for participant in group {group_num}"
+            f"Starting trial type {trial_letter[trial_type_num]} for participant in group {group_num}"
         )
         trial_info = TEST_TRIALS[trial_type_num - 1]
 
@@ -717,6 +743,8 @@ def run_testing_trial(data):
             stage2_coins=trial_info["stage2_coins"],
             one_chest=trial_info["one_chest"],
             prize_side=side,
+            score=score,
+            meter=meter,
         )
         if i == 2:
             trial.halfway = True
@@ -753,13 +781,16 @@ def run_testing_trial(data):
                 coin_amount = 0
             # coin_amount = trial.trial_info["stage_1"]["prize_coins"]
 
-        SCORE.score += coin_amount
-        METER.curr_score = SCORE.score
+        score.score += coin_amount
+        meter.curr_score = score.score
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = True
-        trial_data["trial_type"] = trial_type_num
+        trial_data["trial_type"] = trial_letter[trial_type_num]
+        trial_data["total_score"] = score.score
 
-        data[f"trial {trial.trial_num}"] = trial_data
+        data[
+            f"trial__test_{trial_letter[trial_type_num]}_seq_{trial.trial_num}"
+        ] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -769,8 +800,9 @@ def run_testing_trial(data):
 @kesar
 def experiment(child_data):
     # # Reset the experiment state
-    SCORE.score = 0
-    METER.curr_score = SCORE.score
+    SCORE = ScoreDisplay()
+    METER = ScoreMeter()
+
     child_id = child_data.get("child", [""])[0]
     response_id = child_data.get("response", [""])[0]
     unique_id = f"{child_id}_{response_id}"
@@ -779,19 +811,26 @@ def experiment(child_data):
         "response_id": response_id,
         "unique_id": unique_id,
     }
-    Trial.trial_num = 1  # reset trial numbering
-    Trial.play_flag_intro = True
-    Trial.play_hook_intro = True
-    Trial.trigger_highlight = True
+
+    last_trial_num, last_score = get_last_trial_info(unique_id)
+
+    if last_trial_num > 0:
+        Trial.play_flag_intro = False
+        Trial.play_hook_intro = True
+        Trial.trigger_highlight = False
+
+    SCORE.score = last_score
+    METER.curr_score = SCORE.score
+    Trial.trial_num = last_trial_num + 1  # reset trial numbering
 
     # Begin
     yield start_page()
 
-    yield from run_training_trial1(data)
-    yield from run_training_trial2(data)
-    yield from run_training_trial3(data)
-    yield from run_training_trial4(data)
-    yield from run_testing_trial(data)
+    yield from run_training_trial1(data, SCORE, METER)
+    yield from run_training_trial2(data, SCORE, METER)
+    yield from run_training_trial3(data, SCORE, METER)
+    yield from run_training_trial4(data, SCORE, METER)
+    yield from run_testing_trial(data, SCORE, METER)
 
-    yield end_page()
+    yield end_page(SCORE, METER)
     return data

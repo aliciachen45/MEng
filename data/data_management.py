@@ -3,6 +3,8 @@ import json
 import os
 from dotenv import load_dotenv
 import random
+import csv
+import pandas as pd
 
 load_dotenv()
 access_key = os.getenv("AWS_ACCESS_KEY")
@@ -214,12 +216,103 @@ def clear_all_data():
     clear_groups()
 
 
+def get_last_trial_info(response_id):
+    """
+    Checks if a log exists for the uid and returns the
+    highest trial number found and the existing data.
+    """
+    existing_data = get_single_log(response_id)
+    if not existing_data:
+        return 0, 0
+
+    # Find the maximum trial sequence number already recorded
+    trial_nums = []
+    scores = []
+    for key, value in existing_data.items():
+        if "type" in key:
+            try:
+                # Extract the number after 'seq_'
+                num = int(key.split("_")[-1])
+                trial_nums.append(num)
+                scores.append(value.get("total_score", 0))
+            except ValueError:
+                continue
+    print(f"Existing trial numbers for {response_id}: {trial_nums}")
+    print(f"Existing scores for {response_id}: {scores}")
+
+    last_num = max(trial_nums) if trial_nums else 0
+    max_score = max(scores) if scores else 0
+    return last_num, max_score
+
+
+def flatten_log(data, inclusion_criteria=lambda x: True):
+    rows = []
+
+    status = inclusion_criteria(data)
+
+    meta = {
+        "unique_id": data.get("unique_id"),
+        "child_id": data.get("child_id"),
+        "response_id": data.get("response_id"),
+        "group": data.get("group"),
+        "status": "include" if status else "exclude",
+    }
+
+    for key, value in data.items():
+        if key.startswith("trial"):
+            row = meta.copy()
+            trial_data = value.copy()
+            if isinstance(trial_data.get("choice1"), dict):
+                trial_data["choice1"] = trial_data["choice1"].get(
+                    "clicked_side1", [None]
+                )[0]
+
+            row.update(trial_data)
+            rows.append(row)
+
+    return rows
+
+
+def covnert_logs_to_raw_csv(logs, filename):
+    rows = []
+
+    for log in logs:
+        log_rows = flatten_log(log)
+        rows.extend(log_rows)
+
+    df = pd.DataFrame(rows)
+
+    df.to_csv(f"{filename}", index=False)
+
+    print(f"Data successfully saved to {filename}")
+    return df
+
+
+def include_only_pass_training_first(data):
+    """
+    Returns False if any trial_type has > 1 occurrence in the Training Phase.
+    """
+    training_counts = {}
+
+    for key, value in data.items():
+        if key.startswith("trial"):
+            if value.get("test_trial") is False:
+                t_type = value.get("trial_type")
+
+                training_counts[t_type] = training_counts.get(t_type, 0) + 1
+
+                if training_counts[t_type] > 1:
+                    return False
+
+    return True
+
+
 if __name__ == "__main__":
     # Example usage
-    # clear_all_data()
     print(get_single_log("_"))
     # logs = get_all_logs()
     # group_assignments = get_group_assignments()
     # print(f"Total logs retrieved: {len(logs)}")
-    # print(logs)
+    # # print(logs[3])
+    # covnert_logs_to_raw_csv(logs, "all_logs.csv")
     # print(group_assignments)
