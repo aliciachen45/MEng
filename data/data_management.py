@@ -237,25 +237,29 @@ def get_last_trial_info(response_id):
     """
     existing_data = get_single_log(response_id)
     if not existing_data:
-        return 0, 0
+        return 0, 0, 0
 
     # Find the maximum trial sequence number already recorded
-    trial_nums = []
-    scores = []
+    trial_data = []
     for key, value in existing_data.items():
-        if "type" in key:
+        if "trial" in key:
             try:
+                print(value)
                 # Extract the number after 'seq_'
-                num = int(key.split("_")[-1])
-                trial_nums.append(num)
-                scores.append(value.get("total_score", 0))
+                # num = int(key.split("_")[-1])
+                data = (
+                    value.get("trial_number", 0),
+                    value.get("total_score", 0),
+                )
+                trial_data.append(data)
             except ValueError:
                 continue
-    print(f"Existing trial numbers for {response_id}: {trial_nums}")
-    print(f"Existing scores for {response_id}: {scores}")
+    # print(f"Existing trial numbers for {response_id}: {trial_nums}")
+    # print(f"Existing scores for {response_id}: {scores}")
 
-    last_num = max(trial_nums) if trial_nums else 0
-    max_score = max(scores) if scores else 0
+    last_trial = max(trial_data) if trial_data else (0, 0)
+    last_num = last_trial[0]
+    max_score = last_trial[1]
     return last_num, max_score
 
 
