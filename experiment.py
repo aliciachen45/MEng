@@ -48,16 +48,19 @@ SIDE_ORDERS = [
 
 TEST_TRIALS = [
     {
+        "name": "Inf2c_Seen1",
         "stage1_coins": 2,
         "stage2_coins": 1,
         "one_chest": True,
     },  # Equivalent to 1 cup trial, higher chest EV, No chest Uncertainty, OG
     {
+        "name": "Unk4c_Seen1",
         "stage1_coins": 4,
         "stage2_coins": 1,
         "one_chest": False,
     },  # Equivalent to 2 cup trial, higher chest EV, high chest uncertainty,
     {
+        "name": "Unk2c_Seen1",
         "stage1_coins": 2,
         "stage2_coins": 1,
         "one_chest": False,
@@ -514,7 +517,9 @@ def run_training_trial1(data, score, meter):
         trial_data["trial_type"] = 1
         trial_data["total_score"] = score.score
 
-        data[f"trial__train_1_seq_{trial.trial_num}"] = trial_data
+        data[
+            f"trial__train_1_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        ] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -568,7 +573,9 @@ def run_training_trial2(data, score, meter):
         trial_data["trial_type"] = 2
         trial_data["total_score"] = score.score
 
-        data[f"trial__train_2_seq_{trial.trial_num}"] = trial_data
+        data[
+            f"trial__train_2_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        ] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -638,7 +645,9 @@ def run_training_trial3(data, score, meter):
         trial_data["trial_type"] = 3
         trial_data["total_score"] = score.score
 
-        data[f"trial__train_3_seq_{trial.trial_num}"] = trial_data
+        data[
+            f"trial__train_3_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        ] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -703,7 +712,9 @@ def run_training_trial4(data, score, meter):
         trial_data["test_trial"] = False
         trial_data["trial_type"] = 4
         trial_data["total_score"] = score.score
-        data[f"trial__train_4_seq_{trial.trial_num}"] = trial_data
+        data[
+            f"trial__train_4_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        ] = trial_data
 
         save_to_s3(data, data["unique_id"])
 
@@ -728,15 +739,15 @@ def run_testing_trial(data, score, meter):
     side_order = SIDE_ORDERS[random.random() < 0.5]
     data["group"] = group_num
 
-    trial_letter = {1: "A", 2: "B", 3: "C"}
-
     for i, (trial_type_num, side) in enumerate(
         zip(TRIAL_ORDERS[group_num], side_order)
     ):
-        print(
-            f"Starting trial type {trial_letter[trial_type_num]} for participant in group {group_num}"
-        )
         trial_info = TEST_TRIALS[trial_type_num - 1]
+        trial_type_name = trial_info["name"]
+
+        print(
+            f"Starting trial type {trial_type_name} for participant in group {group_num}"
+        )
 
         trial = TestingTrial(
             stage1_coins=trial_info["stage1_coins"],
@@ -785,11 +796,11 @@ def run_testing_trial(data, score, meter):
         meter.curr_score = score.score
         trial_data["coins_recieved"] = coin_amount
         trial_data["test_trial"] = True
-        trial_data["trial_type"] = trial_letter[trial_type_num]
+        trial_data["trial_type"] = trial_type_name
         trial_data["total_score"] = score.score
 
         data[
-            f"trial__test_{trial_letter[trial_type_num]}_seq_{trial.trial_num}"
+            f"trial__test_{trial_type_name}_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
         ] = trial_data
 
         save_to_s3(data, data["unique_id"])
