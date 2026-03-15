@@ -480,6 +480,7 @@ def run_training_trial1(data, score, meter):
     num_tries = 0
     # One stage training trial with no occluders
 
+    segment_data = {}
     while num_tries < 4:
         trial = OneStageTrainingTrial(
             stage1_coins=n,
@@ -517,11 +518,11 @@ def run_training_trial1(data, score, meter):
         trial_data["trial_type"] = 1
         trial_data["total_score"] = score.score
 
-        data[
-            f"trial__train_1_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        segment_data[
+            f"trial__train_1_num_{trial.trial_num}_{random.randint(100000, 999999)}"
         ] = trial_data
 
-        save_to_s3(data, data["unique_id"])
+        save_to_s3(segment_data, data["unique_id"])
 
         if (
             trial_data["choice1"]["clicked_side1"][0]
@@ -536,6 +537,7 @@ def run_training_trial2(data, score, meter):
     num_tries = 0
     # One stage training tiral w/occluders:
 
+    segment_data = {}
     while num_tries < 4:
         trial = OneStageTrainingTrial(
             stage1_coins=n,
@@ -573,11 +575,11 @@ def run_training_trial2(data, score, meter):
         trial_data["trial_type"] = 2
         trial_data["total_score"] = score.score
 
-        data[
-            f"trial__train_2_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        segment_data[
+            f"trial__train_2_num_{trial.trial_num}_{random.randint(100000, 999999)}"
         ] = trial_data
 
-        save_to_s3(data, data["unique_id"])
+        save_to_s3(segment_data, data["unique_id"])
 
         # They answered correclty, breaking out of this loop
         if (
@@ -592,6 +594,8 @@ def run_training_trial3(data, score, meter):
     trial_order = ["right", "left", "left", "right"]
     num_tries = 0
     # Two stage training trial, correct choice is chest
+
+    segment_data = {}
     while num_tries < 4:
 
         trial = TwoStageTrainingTrial(
@@ -645,11 +649,11 @@ def run_training_trial3(data, score, meter):
         trial_data["trial_type"] = 3
         trial_data["total_score"] = score.score
 
-        data[
-            f"trial__train_3_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        segment_data[
+            f"trial__train_3_num_{trial.trial_num}_{random.randint(100000, 999999)}"
         ] = trial_data
 
-        save_to_s3(data, data["unique_id"])
+        save_to_s3(segment_data, data["unique_id"])
 
         if coin_amount == trial.max_coins:
             break
@@ -661,6 +665,7 @@ def run_training_trial4(data, score, meter):
     trial_order = ["left", "right", "right", "left"]
     num_tries = 0
     # Two stage training trial, correct choice is bag
+    segment_data = {}
     while num_tries < 4:
         trial = TwoStageTrainingTrial(
             stage1_coins=n1,
@@ -712,11 +717,11 @@ def run_training_trial4(data, score, meter):
         trial_data["test_trial"] = False
         trial_data["trial_type"] = 4
         trial_data["total_score"] = score.score
-        data[
-            f"trial__train_4_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        segment_data[
+            f"trial__train_4_num_{trial.trial_num}_{random.randint(100000, 999999)}"
         ] = trial_data
 
-        save_to_s3(data, data["unique_id"])
+        save_to_s3(segment_data, data["unique_id"])
 
         if coin_amount == trial.max_coins:
             break
@@ -737,7 +742,8 @@ def run_testing_trial(data, score, meter):
     )
 
     side_order = SIDE_ORDERS[random.random() < 0.5]
-    data["group"] = group_num
+
+    segment_data = {"group": group_num}
 
     for i, (trial_type_num, side) in enumerate(
         zip(TRIAL_ORDERS[group_num], side_order)
@@ -799,13 +805,13 @@ def run_testing_trial(data, score, meter):
         trial_data["trial_type"] = trial_type_name
         trial_data["total_score"] = score.score
 
-        data[
-            f"trial__test_{trial_type_name}_seq_{trial.trial_num}_{random.randint(100000, 999999)}"
+        segment_data[
+            f"trial__test_{trial_type_name}_num_{trial.trial_num}_{random.randint(100000, 999999)}"
         ] = trial_data
 
-        save_to_s3(data, data["unique_id"])
+        save_to_s3(segment_data, data["unique_id"])
 
-    return data
+    return segment_data
 
 
 @kesar
@@ -822,6 +828,8 @@ def experiment(child_data):
         "response_id": response_id,
         "unique_id": unique_id,
     }
+
+    save_to_s3(data, unique_id)  # Save initial data to S3
 
     last_trial_num, last_score = get_last_trial_info(unique_id)
 

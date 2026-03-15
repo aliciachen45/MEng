@@ -20,26 +20,40 @@ s3 = boto3.client(
 )
 
 
-def save_to_s3(data, uid):
+def save_to_s3(new_trial_entry, uid):
     """
-    Uploads the experiment data directly to an S3 bucket.
+    Pulls existing log from S3, appends the new trial entry,
+    and pushes the updated file back.
     """
     file_key = f"logs/{uid}.json"
-    json_content = json.dumps(data, indent=2)
 
+    # 1. Try to fetch existing data
+    try:
+        response = s3.get_object(Bucket=bucket_name, Key=file_key)
+        # Load the existing JSON into a dictionary
+        current_data = json.loads(response["Body"].read().decode("utf-8"))
+    except s3.exceptions.NoSuchKey:
+        # If the file doesn't exist yet, start with an empty dict
+        # (or just the metadata if you pass that in)
+        current_data = {}
+    except Exception as e:
+        print(f"Error fetching from S3: {e}")
+        current_data = {}
+
+    # 2. Update the dictionary with the new trial data
+    # new_trial_entry should be a dict like: {"trial_name": {data...}}
+    current_data.update(new_trial_entry)
+
+    # 3. Push the combined data back to S3
     try:
         s3.put_object(
             Bucket=bucket_name,
             Key=file_key,
-            Body=json_content,
+            Body=json.dumps(current_data, indent=2),
             ContentType="application/json",
         )
-        print(
-            f"Successfully uploaded log for {uid} to S3 bucket {bucket_name}."
-        )
+        print(f"Successfully updated log for {uid}.")
     except Exception as e:
-        print(json_content)
-        print(uid)
         print(f"FAILED to upload to S3: {e}")
 
 
@@ -311,8 +325,8 @@ if __name__ == "__main__":
     # Example usage
     print(get_single_log("_"))
     # logs = get_all_logs()
+    # clear_all_data()
     # group_assignments = get_group_assignments()
     # print(f"Total logs retrieved: {len(logs)}")
     # # print(logs[3])
     # covnert_logs_to_raw_csv(logs, "all_logs.csv")
-    # print(group_assignments)
