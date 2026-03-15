@@ -845,10 +845,10 @@ def experiment(child_data):
     # Begin
     yield start_page()
 
-    # yield from run_training_trial1(data, SCORE, METER)
-    # yield from run_training_trial2(data, SCORE, METER)
-    # yield from run_training_trial3(data, SCORE, METER)
-    # yield from run_training_trial4(data, SCORE, METER)
+    yield from run_training_trial1(data, SCORE, METER)
+    yield from run_training_trial2(data, SCORE, METER)
+    yield from run_training_trial3(data, SCORE, METER)
+    yield from run_training_trial4(data, SCORE, METER)
     yield from run_testing_trial(data, SCORE, METER)
 
     yield end_page(SCORE, METER)
